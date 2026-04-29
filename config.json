@@ -1,0 +1,318 @@
+{
+  "ALIAS_MAP": {
+    "SAME_AS_CAM_B": "CAM-打印组（B栋）",
+    "CAM_氧化锆": "CAM-打印组（B栋）",
+    "SAME_AS_财务部": "财务部（1楼）",
+    "SAME_AS_车金C": "车金组（C栋）",
+    "SAME_AS_蜡型D": "蜡型组（D栋）"
+  },
+  "DEPT_SHIFTS": {
+    "CAD（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"}
+    ],
+    "CAM-打印组（B栋）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"07:00","end":"11:00","net_h":4,"day_val":0.5,"ot_base":"11:00"},
+      {"start":"15:00","end":"23:30","net_h":8,"day_val":1,"ot_base":"23:30","break_min":30}
+    ],
+    "CAM-模型打印（4楼）": "SAME_AS_CAM_B",
+    "CAM-模型打印（C栋）": "SAME_AS_CAM_B",
+    "CAM-氧化锆切削（4楼）": "CAM_氧化锆",
+    "CAM-氧化锆切削（C栋）": "CAM_氧化锆",
+    "保安组": [
+      {"start":"06:30","end":"17:30","net_h":9.5,"day_val":1,"no_ot":true},
+      {"start":"16:00","end":null,"net_h":null,"day_val":1,"no_ot":true}
+    ],
+    "卫生组": [
+      {"start":"06:30","end":"16:30","net_h":8.5,"day_val":1,"no_ot":true}
+    ],
+    "财务部（1楼）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "仓库": "SAME_AS_财务部",
+    "车金组（C栋）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"07:00","end":"11:00","net_h":4,"day_val":0.5,"ot_base":"11:00"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30}
+    ],
+    "车金组（D栋）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"07:00","end":"11:00","net_h":4,"day_val":0.5,"ot_base":"11:00"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"}
+    ],
+    "戴锆组（C栋）": "SAME_AS_车金C",
+    "单据处理（1楼）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"07:00","end":"11:00","net_h":4,"day_val":0.5,"ot_base":"11:00"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "雕蜡组": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "翻译组（C栋）": "SAME_AS_财务部",
+    "翻译组（D栋）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"07:30","end":"17:00","net_h":8,"day_val":1,"ot_base":"17:00"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "非种植CAD（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"}
+    ],
+    "非种植车瓷组（C栋）": "SAME_AS_财务部",
+    "钢托打磨组（B栋）": "SAME_AS_财务部",
+    "钢托设计组（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"}
+    ],
+    "个托蜡堤组": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30}
+    ],
+    "管理层组（1楼4楼）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"},
+      {"start":"15:00","end":"23:30","net_h":8,"day_val":1,"ot_base":"23:30","break_min":30}
+    ],
+    "过程检（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30}
+    ],
+    "过程检（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"}
+    ],
+    "活动石膏（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"}
+    ],
+    "胶托充胶（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"}
+    ],
+    "胶托打磨组（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "金属切削组（C栋）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"},
+      {"start":"15:30","end":"00:00","net_h":8,"day_val":1,"ot_base":"00:00","break_min":30}
+    ],
+    "进度组（B栋）": "SAME_AS_财务部",
+    "进度组（C栋）": "SAME_AS_财务部",
+    "进度组（D栋）": "SAME_AS_财务部",
+    "精密研磨组（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30}
+    ],
+    "烤瓷车瓷组（D栋）": "SAME_AS_财务部",
+    "客服A组（问单）-D栋": [
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30}
+    ],
+    "客服B组（邮件）-D栋": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "客服组（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "口扫修边组（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "口扫修边组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "蜡型组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "美学组（D栋）": "SAME_AS_蜡型D",
+    "模型组（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"}
+    ],
+    "模型组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"}
+    ],
+    "排牙组（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "抛光组（4楼）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"07:00","end":"11:00","net_h":4,"day_val":0.5,"ot_base":"11:00"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30}
+    ],
+    "抛光组（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "全锆车瓷组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"}
+    ],
+    "人事行政部（1楼4楼）": "SAME_AS_财务部",
+    "上OP组（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"}
+    ],
+    "上OP组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30}
+    ],
+    "上瓷组（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "上瓷组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "上釉组（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "上釉组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30}
+    ],
+    "收发组（C栋）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"07:00","end":"11:00","net_h":4,"day_val":0.5,"ot_base":"11:00"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "收发组（D栋）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"07:00","end":"11:00","net_h":4,"day_val":0.5,"ot_base":"11:00"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"22:00","net_h":8,"day_val":1,"ot_base":"22:00","break_min":30},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "数据下载（1楼）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"}
+    ],
+    "数据下载（D栋）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "隐形充胶（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30}
+    ],
+    "隐形打磨组（B栋）": "SAME_AS_财务部",
+    "正畸组（B栋）": "SAME_AS_财务部",
+    "终检组  (C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30}
+    ],
+    "终检组（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30}
+    ],
+    "终检组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00","break_min":30},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00","break_min":30}
+    ],
+    "种植CAD(C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"},
+      {"start":"13:30","end":"22:00","net_h":8.5,"day_val":1,"ot_base":"22:00"}
+    ],
+    "种植车瓷组（C栋）": "SAME_AS_财务部"
+  }
+}
