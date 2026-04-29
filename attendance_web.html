@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>考勤记录处理工具</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Microsoft YaHei', sans-serif; background: #f0f2f5; color: #333; }
+.header { background: #1677ff; color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+.header h1 { font-size: 20px; font-weight: 600; }
+.header .version { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+.container { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+.card { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; overflow: hidden; }
+.card-header { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.card-body { padding: 20px; }
+.upload-area { border: 2px dashed #d9d9d9; border-radius: 8px; text-align: center; padding: 40px 20px; cursor: pointer; transition: all 0.2s; background: #fafafa; }
+.upload-area:hover, .upload-area.drag-over { border-color: #1677ff; background: #e8f4ff; }
+.upload-area .icon { font-size: 40px; margin-bottom: 12px; }
+.upload-area p { color: #666; margin-bottom: 8px; }
+.upload-area .hint { font-size: 12px; color: #999; }
+#fileInput { display: none; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; font-family: inherit; transition: all 0.2s; }
+.btn-primary { background: #1677ff; color: #fff; }
+.btn-primary:hover { background: #0958d9; }
+.btn-primary:disabled { background: #91caff; cursor: not-allowed; }
+.btn-success { background: #52c41a; color: #fff; }
+.btn-success:hover { background: #389e0d; }
+.btn-success:disabled { background: #b7eb8f; cursor: not-allowed; }
+.btn-default { background: #fff; color: #333; border: 1px solid #d9d9d9; }
+.btn-default:hover { border-color: #1677ff; color: #1677ff; }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.progress-bar { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+.progress-bar .fill { height: 100%; background: #1677ff; border-radius: 3px; transition: width 0.3s; }
+.log-area { max-height: 200px; overflow-y: auto; background: #1a1a2e; color: #a9b7c6; padding: 12px; border-radius: 6px; font-size: 12px; font-family: 'Consolas', monospace; }
+.log-area .log-ok { color: #6fc68e; }
+.log-area .log-warn { color: #f0b46c; }
+.log-area .log-err { color: #f07070; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.stat-card { background: #f8f9fa; border-radius: 6px; padding: 12px; text-align: center; }
+.stat-card .num { font-size: 24px; font-weight: 700; color: #1677ff; }
+.stat-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+.table-wrap { overflow: auto; max-height: 500px; border: 1px solid #f0f0f0; border-radius: 6px; }
+table { border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+th { background: #fafafa; position: sticky; top: 0; z-index: 10; padding: 8px 10px; border: 1px solid #e8e8e8; font-weight: 600; text-align: center; }
+td { padding: 4px 8px; border: 1px solid #e8e8e8; vertical-align: top; text-align: center; max-width: 100px; }
+td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-height: 1.6; }
+.red { color: #ff4d4f; }
+.orange-bg { background: #fff7e6; }
+.hidden { display: none; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+.tag-green { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.tag-blue { background: #e8f4ff; color: #1677ff; border: 1px solid #91caff; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>📊 考勤记录处理工具</h1>
+    <div class="version">v2.0 · 支持66个部门 · 自动班次匹配</div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- 上传区 -->
+  <div class="card">
+    <div class="card-header">📂 上传原始考勤文件（得力系统导出）</div>
+    <div class="card-body">
+      <div class="upload-area" id="uploadArea">
+        <div class="icon">📄</div>
+        <p>点击选择或拖拽 Excel 文件到此处</p>
+        <p class="hint">支持 .xlsx 格式（得力系统导出的原始考勤表）</p>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+      <div id="fileInfo" class="hidden" style="margin-top:12px; padding:10px; background:#f6ffed; border-radius:6px; color:#52c41a; font-size:13px;"></div>
+    </div>
+  </div>
+
+  <!-- 操作区 -->
+  <div class="card">
+    <div class="card-header">⚙️ 操作</div>
+    <div class="card-body">
+      <div class="actions">
+        <button class="btn btn-primary" id="btnProcess" disabled onclick="startProcess()">▶ 开始处理</button>
+        <button class="btn btn-success" id="btnExport" disabled onclick="exportExcel()">⬇ 导出Excel</button>
+        <button class="btn btn-default" onclick="resetAll()">🔄 重置</button>
+      </div>
+      <div id="progressArea" class="hidden" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:#666; margin-bottom:6px;">
+          <span id="progressLabel">处理中...</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0"></div></div>
+        <div class="log-area" id="logArea"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 统计摘要 -->
+  <div class="card hidden" id="summaryCard">
+    <div class="card-header">📈 处理结果摘要</div>
+    <div class="card-body">
+      <div class="stats-grid" id="statsGrid"></div>
+    </div>
+  </div>
+
+  <!-- 预览表格 -->
+  <div class="card hidden" id="previewCard">
+    <div class="card-header">
+      👁 数据预览（前20行）
+      <span class="tag tag-blue" style="margin-left:auto; font-size:11px;">橙色=周末 | 红色=迟到/缺卡/加班</span>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap" id="previewTable"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 部门班次配置 — 从 config.json 动态加载
+// ============================================================
+let ALIAS_MAP = {};
+let DEPT_SHIFTS = {};
+
+// 获取当前HTML所在路径，自动加载同目录下的config.json
+const CONFIG_URL = (document.currentScript?.src || location.href).replace(/[^/]*$/, '') + 'config.json';
+
+async function loadConfig() {
+  try {
+    const resp = await fetch(CONFIG_URL);
+    if (!resp.ok) throw new Error('config.json 加载失败: ' + resp.status);
+    const config = await resp.json();
+    ALIAS_MAP = config.ALIAS_MAP || {};
+    DEPT_SHIFTS = config.DEPT_SHIFTS || {};
+    logMsg('ok', '班次配置已加载，共 ' + Object.keys(DEPT_SHIFTS).length + ' 个部门');
+    return true;
+  } catch (e) {
+    logMsg('err', '加载config.json失败: ' + e.message);
+    return false;
+  }
+}
+
+// ============================================================
+// 工具函数
+// ============================================================
+function parseShiftTime(s) {
+  if (!s) return null;
+  const [h, m] = s.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function timeToMin(t) { return t.h * 60 + t.m; }
+
+function getDeptShifts(dept) {
+  if (!dept) return [];
+  let val = DEPT_SHIFTS[dept];
+  if (!val) {
+    // 模糊匹配
+    for (const [d, v] of Object.entries(DEPT_SHIFTS)) {
+      if (Array.isArray(v) && (dept.includes(d) || d.includes(dept))) return v;
+    }
+    return [];
+  }
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string' && val.startsWith('SAME_AS_')) {
+    const refDept = ALIAS_MAP[val] || '';
+    if (refDept && DEPT_SHIFTS[refDept]) {
+      const rv = DEPT_SHIFTS[refDept];
+      if (Array.isArray(rv)) return rv;
+    }
+  }
+  return [];
+}
+
+// 解析打卡时间字符串为 [{h,m}] 数组
+function parseTimes(str) {
+  if (!str || str.trim() === '' || str.trim() === '-') return [];
+  const times = [];
+  for (const line of str.split('\n')) {
+    const t = line.trim();
+    if (!t || t === '-') continue;
+    if (t.includes(':')) {
+      const [h, m] = t.split(':').map(Number);
+      if (!isNaN(h) && !isNaN(m)) times.push({h, m});
+    }
+  }
+  // 排序：凌晨(h<5)放后面
+  times.sort((a, b) => {
+    const ka = a.h < 5 ? 1440 + a.h * 60 + a.m : a.h * 60 + a.m;
+    const kb = b.h < 5 ? 1440 + b.h * 60 + b.m : b.h * 60 + b.m;
+    return ka - kb;
+  });
+  return times;
+}
+
+// 去重（间隔<10分钟合并）
+function dedupTimes(times) {
+  if (times.length <= 1) return times;
+  const res = [times[0]];
+  for (let i = 1; i < times.length; i++) {
+    let gap = timeToMin(times[i]) - timeToMin(res[res.length - 1]);
+    if (gap < 0) gap += 1440;
+    if (gap >= 10) res.push(times[i]);
+  }
+  return res;
+}
+
+// 班次匹配（打分法）
+function inferShiftFromDept(times, dept) {
+  const shifts = getDeptShifts(dept);
+  if (!shifts.length) return null;
+  const normalTimes = times.filter(t => t.h >= 6);
+  if (!normalTimes.length) return null;
+
+  let bestShift = null, bestScore = -999;
+
+  for (const shift of shifts) {
+    const sStart = parseShiftTime(shift.start);
+    const sEnd = parseShiftTime(shift.end);
+    if (sStart === null) continue;
+    let score = 0;
+    const isNight = sStart >= 15 * 60;
+
+    if (isNight) {
+      const hasEarly = normalTimes.some(t => t.h < 12);
+      if (!hasEarly) score += 15;
+      if (normalTimes.some(t => Math.abs(timeToMin(t) - sStart) <= 30)) score += 10;
+      if (sEnd !== null && normalTimes.some(t => Math.abs(timeToMin(t) - sEnd) <= 30)) score += 10;
+    } else {
+      const hasMorning = normalTimes.some(t => t.h < 12);
+      const hasAfternoon = normalTimes.some(t => t.h >= 13);
+      if (normalTimes.some(t => Math.abs(timeToMin(t) - sStart) <= 30)) score += 10;
+      if (sEnd !== null) {
+        let nearEnd = normalTimes.some(t => Math.abs(timeToMin(t) - sEnd) <= 45);
+        if (!nearEnd && sEnd >= 17 * 60) {
+          nearEnd = normalTimes.some(t => timeToMin(t) >= 17 * 60 && timeToMin(t) < 18 * 60);
+        }
+        if (nearEnd) {
+          score += 10;
+        } else {
+          if (normalTimes.some(t => timeToMin(t) > sEnd)) score += 5;
+        }
+      }
+      if (sEnd && sEnd <= 12 * 60) {
+        if (!hasAfternoon) score += 5; else score -= 5;
+      }
+      if (sStart >= 13 * 60) {
+        if (!hasMorning) score += 5; else score -= 5;
+      }
+    }
+    if (score > bestScore) { bestScore = score; bestShift = shift; }
+  }
+  return bestScore >= 5 ? bestShift : null;
+}
+
+function getShiftStartFromDept(times, dept) {
+  if (dept.includes('保安') || dept.includes('卫生')) {
+    const normal = times.filter(t => t.h >= 6);
+    if (normal.length && normal.some(t => t.h < 12)) return {h:6, m:30};
+    return {h:16, m:0};
+  }
+  const shift = inferShiftFromDept(times, dept);
+  if (shift) {
+    const [h, m] = shift.start.split(':').map(Number);
+    return {h, m};
+  }
+  const normal = times.filter(t => t.h >= 6);
+  if (!normal.length) return {h:8, m:0};
+  const first = normal[0];
+  if (first.h <= 7) return {h:8, m:0};
+  if (first.h === 8) return {h:8, m:0};
+  if (first.h === 9) return {h:9, m:0};
+  if (first.h === 10) return {h:10, m:0};
+  if (first.h === 13) return {h:13, m:30};
+  if (first.h >= 15) return {h:15, m:0};
+  return {h:first.h, m:0};
+}
+
+// 打卡分类
+function classifyPunchTimes(times) {
+  const result = {morning_start:[], noon_end:[], afternoon_start:[], afternoon_end:[], overtime_start:[], overtime_end:[]};
+  if (!times.length) return result;
+
+  const hasNormal = times.some(t => t.h >= 5);
+  const midnightIndices = new Set();
+  if (hasNormal) {
+    for (let i = times.length - 1; i >= 0; i--) {
+      if (times[i].h < 5) midnightIndices.add(i);
+      else break;
+    }
+  }
+
+  const noonBuffer = [];
+  for (let idx = 0; idx < times.length; idx++) {
+    const t = times[idx];
+    const tm = timeToMin(t);
+    if (midnightIndices.has(idx)) { result.overtime_end.push(t); continue; }
+    if (tm < 12 * 60) { result.morning_start.push(t); }
+    else if (tm < 13 * 60 + 30) { noonBuffer.push({idx, t}); }
+    else if (tm < 17 * 60 + 30) { result.afternoon_start.push(t); }
+    else if (tm < 17 * 60 + 50) { result.afternoon_end.push(t); }
+    else if (tm < 18 * 60) { result.overtime_start.push(t); }
+    else { result.overtime_end.push(t); }
+  }
+
+  noonBuffer.sort((a,b) => a.idx - b.idx);
+  const gapFlags = [false];
+  for (let i = 1; i < noonBuffer.length; i++) {
+    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) > 10);
+  }
+  let noonCount = 0;
+  for (let i = 0; i < noonBuffer.length; i++) {
+    const {t} = noonBuffer[i];
+    const tm = timeToMin(t);
+    if (tm >= 13 * 60 + 15) { result.afternoon_start.push(t); }
+    else if (tm < 12 * 60 + 30) {
+      if (gapFlags[i] && noonCount > 0) result.afternoon_start.push(t);
+      else { result.noon_end.push(t); noonCount++; }
+    } else {
+      if (noonCount > 0) { result.afternoon_start.push(t); }
+      else if (i + 1 < noonBuffer.length) { result.noon_end.push(t); noonCount++; }
+      else result.afternoon_start.push(t);
+    }
+  }
+  for (const k of Object.keys(result)) result[k].sort((a,b) => timeToMin(a)-timeToMin(b));
+  return result;
+}
+
+function adjustClassified(cls, dept, times) {
+  if (!cls.afternoon_end.length && cls.afternoon_start.length) {
+    const last = cls.afternoon_start[cls.afternoon_start.length-1];
+    if (timeToMin(last) >= 16*60) {
+      cls.afternoon_end = [last];
+      cls.afternoon_start = cls.afternoon_start.slice(0,-1);
+    }
+  }
+  if (!cls.afternoon_end.length && !cls.overtime_start.length && cls.afternoon_start.length && times) {
+    const normal = times.filter(t=>t.h>=6).sort((a,b)=>timeToMin(a)-timeToMin(b));
+    if (normal.length) {
+      const last = normal[normal.length-1];
+      const lm = timeToMin(last);
+      if (lm >= 13*60+30 && lm < 17*60+30) {
+        cls.afternoon_end = [last];
+        cls.afternoon_start = cls.afternoon_start.slice(0,-1);
+      }
+    }
+  }
+  if (!cls.afternoon_end.length && !cls.overtime_end.length && cls.overtime_start.length) {
+    cls.afternoon_end = [cls.overtime_start[cls.overtime_start.length-1]];
+    cls.overtime_start = cls.overtime_start.slice(0,-1);
+  }
+  if (cls.overtime_end.length && !cls.overtime_start.length && !cls.afternoon_end.length) {
+    cls.afternoon_end = [cls.overtime_end[cls.overtime_end.length-1]];
+    cls.overtime_end = cls.overtime_end.slice(0,-1);
+  }
+  return cls;
+}
+
+// 推断缺失的上午上班时间（前后天参考）
+function inferMissingMorningStart(dayIdx, processedDays, dept) {
+  function getMorning(idx) {
+    if (idx < 0 || idx >= processedDays.length) return null;
+    const ts = processedDays[idx];
+    if (!ts || ts.trim() === '' || ts.trim() === '-') return null;
+    let times = parseTimes(ts);
+    times = dedupTimes(times);
+    const cls = classifyPunchTimes(times);
+    if (cls.morning_start.length) {
+      return getShiftStartFromDept(times, dept);
+    }
+    return null;
+  }
+  return getMorning(dayIdx-1) || getMorning(dayIdx+1);
+}
+
+// 计算全天工时
+function calculateAllHours(times, dept, dayIdx, processedDays) {
+  if (!times.length) return {morning:0, afternoon:0, night:0, total:0};
+  const midnightCards = times.filter(t=>t.h<6);
+  const normalCards = times.filter(t=>t.h>=6);
+  if (midnightCards.length && !normalCards.length) return {morning:0, afternoon:0, night:0, total:0};
+
+  const hasMorningCard = times.some(t=>t.h>=6 && t.h<12);
+  const hasAfternoonCard = times.some(t=>t.h>=13);
+
+  // 只有下午/晚上（无上午卡）
+  if (hasAfternoonCard && !hasMorningCard) {
+    const nc = times.filter(t=>t.h>=6).sort((a,b)=>timeToMin(a)-timeToMin(b));
+    if (!nc.length) return {morning:0, afternoon:0, night:0, total:0};
+    const firstMin = timeToMin(nc[0]);
+    let lastMin = timeToMin(nc[nc.length-1]);
+    if (midnightCards.length) lastMin = 24*60 + timeToMin(midnightCards[midnightCards.length-1]);
+    let totalH;
+    if (firstMin < 14*60+30) {
+      if (lastMin <= 17*60+30) {
+        totalH = (lastMin - 13*60 - 30) / 60;
+      } else {
+        totalH = (17*60+30 - 13*60-30)/60 + Math.max(0,(lastMin-18*60)/60);
+      }
+    } else {
+      totalH = Math.max(0, (lastMin - 15*60)/60 - 0.5);
+    }
+    return {morning:0, afternoon:totalH, night:0, total:totalH};
+  }
+
+  // 正常（有上午卡）
+  let cls = classifyPunchTimes(times);
+  cls = adjustClassified(cls, dept, times);
+
+  let mornHours=0, afHours=0, nightHours=0;
+
+  // 推断上班时间
+  let morningStart = null;
+  if (cls.morning_start.length) {
+    morningStart = getShiftStartFromDept(times, dept);
+  } else if (cls.noon_end.length && dayIdx !== undefined && processedDays) {
+    morningStart = inferMissingMorningStart(dayIdx, processedDays, dept);
+  }
+
+  // 上午工时
+  if (morningStart) {
+    const noonCutoff = dept.includes('保安') ? {h:11,m:50} : {h:12,m:0};
+    const mornMin = timeToMin(noonCutoff) - timeToMin(morningStart);
+    if (mornMin > 0) mornHours = mornMin / 60;
+  }
+
+  // 下午工时（用班次正常下班时间）
+  const hasAfWork = cls.afternoon_end.length || cls.overtime_start.length || cls.overtime_end.length || cls.afternoon_start.length;
+  if (hasAfWork) {
+    const afStart = {h:13, m:30};
+    let normalEndTime = {h:17, m:30};
+    if (morningStart) {
+      if (morningStart.h === 9) normalEndTime = {h:19, m:0};
+      else if (morningStart.h === 10) normalEndTime = {h:20, m:0};
+    }
+    const hasOT = cls.overtime_end.length > 0;
+    let afEnd;
+    if (hasOT) {
+      afEnd = normalEndTime;
+    } else if (cls.overtime_start.length && !cls.overtime_end.length) {
+      afEnd = normalEndTime;
+    } else if (cls.afternoon_end.length) {
+      afEnd = cls.afternoon_end[cls.afternoon_end.length-1];
+      if (timeToMin(afEnd) > timeToMin(normalEndTime)) afEnd = normalEndTime;
+    } else if (cls.afternoon_start.length) {
+      afEnd = normalEndTime;
+    } else {
+      afEnd = normalEndTime;
+    }
+    let afMin = timeToMin(afEnd) - timeToMin(afStart);
+    if (timeToMin(normalEndTime) > 18*60) afMin -= 30;
+    if (afMin > 0) afHours = afMin / 60;
+  }
+
+  // 晚上加班工时
+  if (cls.overtime_end.length) {
+    const lastOT = cls.overtime_end[cls.overtime_end.length-1];
+    let otStart = {h:18, m:0};
+    if (morningStart) {
+      if (morningStart.h === 9) otStart = {h:19, m:0};
+      else if (morningStart.h === 10) otStart = {h:20, m:0};
+    }
+    let nightMin;
+    if (lastOT.h < 6) {
+      nightMin = (24*60 - timeToMin(otStart)) + timeToMin(lastOT);
+    } else {
+      nightMin = timeToMin(lastOT) - timeToMin(otStart);
+    }
+    if (nightMin > 0) nightHours = nightMin / 60;
+  }
+
+  const total = mornHours + afHours + nightHours;
+  return {morning: mornHours, afternoon: afHours, night: nightHours, total};
+}
+
+// 出勤+加班计算
+function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
+  const noOt = dept.includes('保安') || dept.includes('卫生');
+  if (noOt) {
+    return {attendanceDays: times.length ? 1 : 0, paidDays: times.length ? 1 : 0, overtimeHours: 0};
+  }
+  if (!times.length) return {attendanceDays:0, paidDays:0, overtimeHours:0};
+
+  const {total: totalH} = calculateAllHours(times, dept, dayIdx, processedDays);
+  let attendanceDays = totalH >= 8 ? 1 : totalH >= 4 ? 0.5 : 0;
+  const standardH = attendanceDays >= 1 ? 8 : attendanceDays >= 0.5 ? 4 : 0;
+  let rawOt = totalH - standardH;
+
+  let paidDays = attendanceDays;
+  let remainOt = rawOt;
+  if (rawOt > 0) {
+    const needed = 1 - paidDays;
+    if (needed > 0) {
+      let maxConvert = Math.floor(rawOt / 4) * 0.5;
+      if (maxConvert > needed) maxConvert = needed;
+      paidDays += maxConvert;
+      remainOt = rawOt - maxConvert * 8;
+    }
+  }
+
+  let overtimeHours = 0;
+  if (remainOt > 0) {
+    const ot = Math.floor(remainOt * 2) * 0.5;
+    if (ot >= 1) overtimeHours = ot;
+  } else if (remainOt < 0) {
+    overtimeHours = Math.floor(remainOt * 2) * 0.5;
+  }
+  return {attendanceDays, paidDays, overtimeHours};
+}
+
+// 缺卡计算
+function calcMissingCards(times, dept) {
+  if (!times.length) return {count:0, types:[]};
+  if (dept.includes('保安') || dept.includes('卫生')) {
+    const normal = times.filter(t=>t.h>=6);
+    const midnight = times.filter(t=>t.h<6);
+    const morning = normal.filter(t=>t.h<12);
+    const afternoon = normal.filter(t=>t.h>=15);
+    if (!morning.length && !afternoon.length) return {count:0, types:[]};
+    let count=0, types=[];
+    if (morning.length) {
+      if (morning.length >= 2) {} else {
+        if (morning[0].h >= 10) { count++; types.push('morning_start'); }
+        else { count++; types.push('noon_end'); }
+      }
+    }
+    const eveCards = afternoon.filter(t=>t.h>=15 && t.h<17);
+    if (eveCards.length) {
+      const hasEnd = afternoon.some(t=>t.h>=17 && t.h<=23) || midnight.length > 0;
+      if (!hasEnd) { count++; types.push('afternoon_end'); }
+    }
+    return {count, types};
+  }
+
+  const midnight = times.filter(t=>t.h<6);
+  let normal = times.filter(t=>t.h>=6);
+  if (midnight.length && !normal.length) return {count:0, types:[]};
+  if (midnight.length && normal.length) times = normal;
+  normal = times.filter(t=>t.h>=6);
+  if (!normal.length) return {count:0, types:[]};
+
+  const hasAfCard = normal.some(t=>t.h>=13);
+  const hasMornCard = normal.some(t=>t.h>=6 && t.h<13);
+  if (!hasMornCard && !hasAfCard) return {count:0, types:[]};
+
+  let count=0, types=[];
+  if (hasAfCard) {
+    let cls = classifyPunchTimes(times);
+    cls = adjustClassified(cls, dept, times);
+    const hasMornStart = cls.morning_start.length > 0;
+    const hasNoonEnd = cls.noon_end.length > 0;
+    const hasAfStart = cls.afternoon_start.length > 0;
+    const hasAfEnd = cls.afternoon_end.length > 0;
+    const hasOtEnd = cls.overtime_end.length > 0;
+    const hasNoonArr = normal.some(t => {const m=timeToMin(t); return m>=12*60+30 && m<13*60+30;});
+
+    if (hasMornStart || hasNoonEnd) {
+      if (!hasMornStart) { count++; types.push('morning_start'); }
+      if (!hasNoonEnd) { count++; types.push('noon_end'); }
+    }
+    const hasAfWork = hasAfStart || hasAfEnd || hasOtEnd;
+    if (hasAfWork) {
+      if (!hasAfStart && !hasNoonArr && !hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_start'); }
+      if (!hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_end'); }
+    }
+    if (hasOtEnd && !cls.overtime_start.length && !hasAfEnd) { count++; types.push('overtime_start'); }
+  } else if (hasMornCard) {
+    const mornCards = normal.filter(t=>t.h<13);
+    if (mornCards.length >= 2) {}
+    else {
+      if (mornCards[0].h >= 10) { count++; types.push('morning_start'); }
+      else { count++; types.push('noon_end'); }
+    }
+  }
+  return {count, types};
+}
+
+// 凌晨卡跨天处理
+function preprocessCrossMidnight(empDays) {
+  const processed = [...empDays];
+  // 首日凌晨卡处理
+  if (processed.length && processed[0]) {
+    const day0Times = parseTimes(processed[0]);
+    const midnights = day0Times.filter(t=>t.h<6);
+    const normals = day0Times.filter(t=>t.h>=6);
+    if (midnights.length && normals.length) {
+      processed[0] = normals.sort((a,b)=>timeToMin(a)-timeToMin(b)).map(t=>`${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`).join('\n');
+    }
+  }
+  for (let d = 0; d < processed.length - 1; d++) {
+    const todayStr = processed[d];
+    const tomorrowStr = processed[d+1];
+    if (!todayStr || !tomorrowStr) continue;
+    const todayTimes = parseTimes(todayStr);
+    const tomorrowTimes = parseTimes(tomorrowStr);
+    if (!todayTimes.length || !tomorrowTimes.length) continue;
+    const todayNormal = todayTimes.filter(t=>t.h>=5);
+    if (!todayNormal.length) continue;
+    const lastToday = todayNormal.reduce((a,b)=>timeToMin(a)>=timeToMin(b)?a:b);
+    if (lastToday.h < 17) continue;
+    const tomorrowMidnights = tomorrowTimes.filter(t=>t.h<6);
+    if (!tomorrowMidnights.length) continue;
+    const midnight = tomorrowMidnights.reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+    const newToday = [...todayTimes, midnight].sort((a,b)=>{
+      const ka = a.h<5?1440+timeToMin(a):timeToMin(a);
+      const kb = b.h<5?1440+timeToMin(b):timeToMin(b);
+      return ka-kb;
+    });
+    const newTomorrow = tomorrowTimes.filter(t=>!(t.h===midnight.h&&t.m===midnight.m));
+    processed[d] = newToday.map(t=>`${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`).join('\n');
+    processed[d+1] = newTomorrow.length ? newTomorrow.map(t=>`${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`).join('\n') : '';
+  }
+  return processed;
+}
+
+// ============================================================
+// 全局状态
+// ============================================================
+let rawWorkbook = null;
+let employees = [];
+let dateHeaders = [];
+let satSunCols = [];
+let empStats = [];
+let processedResult = null;
+
+// ============================================================
+// UI 事件
+// ============================================================
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    rawWorkbook = XLSX.read(e.target.result, {type:'array', raw:false, cellDates:false, cellText:true, cellNF:false});
+    parseExcel();
+    document.getElementById('fileInfo').textContent = `✓ 已加载：${file.name}（${employees.length} 名员工，${dateHeaders.length} 天数据）`;
+    document.getElementById('fileInfo').classList.remove('hidden');
+    document.getElementById('btnProcess').disabled = false;
+    logMsg('ok', `文件解析成功：${employees.length} 名员工，${dateHeaders.length} 个日期列`);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseExcel() {
+  const ws = rawWorkbook.Sheets[rawWorkbook.SheetNames[0]];
+  const data = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
+  if (data.length < 3) { alert('文件格式不对，至少需要3行数据'); return; }
+
+  const headers = data[0];
+  dateHeaders = headers.slice(3);
+  satSunCols = [];
+  for (let i = 0; i < dateHeaders.length; i++) {
+    const h = String(dateHeaders[i]);
+    if (h.includes('周六') || h.includes('周日')) satSunCols.push(i);
+  }
+
+  employees = [];
+  for (let i = 2; i < data.length; i++) {
+    const row = data[i];
+    const name = String(row[0]||'').trim();
+    if (!name || name === 'nan') continue;
+    const days = [];
+    for (let j = 3; j < headers.length; j++) {
+      const v = String(row[j]||'').trim();
+      days.push(v === 'nan' ? '' : v);
+    }
+    employees.push({name, id: String(row[1]||'').trim(), dept: String(row[2]||'').trim(), days});
+  }
+}
+
+function logMsg(type, msg) {
+  const div = document.getElementById('logArea');
+  const line = document.createElement('div');
+  line.className = type === 'ok' ? 'log-ok' : type === 'warn' ? 'log-warn' : 'log-err';
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  div.appendChild(line);
+  div.scrollTop = div.scrollHeight;
+}
+
+function setProgress(pct, label) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  if (label) document.getElementById('progressLabel').textContent = label;
+}
+
+function resetAll() {
+  rawWorkbook = null; employees = []; dateHeaders = []; satSunCols = []; empStats = []; processedResult = null;
+  document.getElementById('fileInfo').classList.add('hidden');
+  document.getElementById('progressArea').classList.add('hidden');
+  document.getElementById('summaryCard').classList.add('hidden');
+  document.getElementById('previewCard').classList.add('hidden');
+  document.getElementById('btnProcess').disabled = true;
+  document.getElementById('btnExport').disabled = true;
+  document.getElementById('logArea').innerHTML = '';
+  fileInput.value = '';
+}
+
+async function startProcess() {
+  document.getElementById('btnProcess').disabled = true;
+  document.getElementById('progressArea').classList.remove('hidden');
+  setProgress(0, '加载班次配置...');
+
+  // 先加载config.json
+  const loaded = await loadConfig();
+  if (!loaded) {
+    document.getElementById('btnProcess').disabled = false;
+    logMsg('err', '无法加载班次配置，请检查config.json文件是否存在');
+    return;
+  }
+
+  setProgress(0, '开始处理...');
+  empStats = [];
+
+  const total = employees.length;
+  for (let i = 0; i < total; i++) {
+    if (i % 20 === 0) {
+      setProgress(Math.round(i/total*90), `处理第 ${i+1}/${total} 名员工...`);
+      await new Promise(r => setTimeout(r, 0));
+    }
+    empStats.push(processEmployee(employees[i]));
+  }
+
+  setProgress(95, '生成预览...');
+  await new Promise(r => setTimeout(r, 0));
+  renderSummary();
+  renderPreview();
+  setProgress(100, '处理完成！');
+  document.getElementById('btnExport').disabled = false;
+  document.getElementById('summaryCard').classList.remove('hidden');
+  document.getElementById('previewCard').classList.remove('hidden');
+  logMsg('ok', `处理完成！共 ${total} 名员工`);
+}
+
+function processEmployee(emp) {
+  const dept = emp.dept;
+  const isNoOt = dept.includes('保安') || dept.includes('卫生');
+  const processedDays = preprocessCrossMidnight([...emp.days]);
+
+  const stats = {
+    name: emp.name, id: emp.id, dept,
+    平时出勤天数:0, 平时加班工时:0, 周末天数:0, 周末加班工时:0,
+    法定假日天数:0, 调休天数:0, 有薪天数:0,
+    迟到次数:0, 缺卡次数:0,
+    '0点':0,'1点':0,'2点':0,'3点':0,
+    '迟到1-10分':0,'迟到11-30分':0,'迟到31-59分':0,'迟到1小时以上':0,
+    加班总时长:0, 备注:'',
+    overtimeDaily:[], isWeekendDaily:[], lateDaily:[], latePunchDaily:[], missingDaily:[],
+    processedDays,     // 计算用（含跨天凌晨卡归入前一天）
+    rawDays: emp.days,  // 显示用（原始数据，不动）
+  };
+
+  const lastIdx = processedDays.length - 1;
+  for (let dayIdx = 0; dayIdx < processedDays.length; dayIdx++) {
+    // 最后一列（下月1号）跳过
+    if (dayIdx === lastIdx) {
+      stats.overtimeDaily.push(0); stats.isWeekendDaily.push(false);
+      stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]);
+      continue;
+    }
+    const timesStr = processedDays[dayIdx];
+    if (!timesStr || timesStr.trim() === '' || timesStr.trim() === '-') {
+      stats.overtimeDaily.push(0); stats.isWeekendDaily.push(false);
+      stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]);
+      continue;
+    }
+    let times = parseTimes(timesStr);
+    if (!times.length) {
+      stats.overtimeDaily.push(0); stats.isWeekendDaily.push(false);
+      stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]);
+      continue;
+    }
+    times = dedupTimes(times);
+    const hdr = String(dateHeaders[dayIdx]||'');
+    const isWeekend = hdr.includes('周六') || hdr.includes('周日');
+    stats.isWeekendDaily.push(isWeekend);
+
+    // === 迟到判断 ===
+    let late=false, latePunch=null, lateMin=0;
+    const normalTimes = times.filter(t=>t.h>=6);
+    if (dept.includes('保安') || dept.includes('卫生')) {
+      const hasMorn = normalTimes.some(t=>t.h<12);
+      const hasEve = normalTimes.some(t=>t.h>=15 && t.h<17);
+      if (hasMorn) {
+        const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+        if (timeToMin(first) > 6*60+30) {
+          late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
+          lateMin = timeToMin(first) - (6*60+30);
+        }
+      }
+      if (hasEve && !late) {
+        const first = normalTimes.filter(t=>t.h>=15&&t.h<17).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+        if (timeToMin(first) > 16*60) {
+          late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
+          lateMin = timeToMin(first) - 16*60;
+        }
+      }
+    } else if (normalTimes.length) {
+      const shift = inferShiftFromDept(times, dept);
+      if (shift) {
+        const [sh, sm] = shift.start.split(':').map(Number);
+        const shiftMin = sh*60+sm;
+        const first = normalTimes.reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+        if (timeToMin(first) > shiftMin) {
+          late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
+          lateMin = timeToMin(first) - shiftMin;
+        }
+      } else {
+        const hasMorn = normalTimes.some(t=>t.h<12);
+        if (hasMorn) {
+          const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+          const shiftStart = getShiftStartFromDept(times, dept);
+          if (timeToMin(first) > timeToMin(shiftStart)) {
+            late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
+            lateMin = timeToMin(first) - timeToMin(shiftStart);
+          }
+        }
+      }
+    }
+    if (late) {
+      stats.迟到次数++;
+      if (lateMin>=1&&lateMin<=10) stats['迟到1-10分']++;
+      else if (lateMin<=30) stats['迟到11-30分']++;
+      else if (lateMin<=59) stats['迟到31-59分']++;
+      else stats['迟到1小时以上']++;
+    }
+    stats.lateDaily.push(late); stats.latePunchDaily.push(latePunch);
+
+    // === 出勤/加班 ===
+    const {attendanceDays, paidDays, overtimeHours} = calcShiftAndOvertime(times, dept, dayIdx, processedDays);
+    if (isWeekend) { stats.周末天数 += attendanceDays; stats.周末加班工时 += overtimeHours; }
+    else { stats.平时出勤天数 += attendanceDays; stats.平时加班工时 += overtimeHours; }
+    stats.overtimeDaily.push(overtimeHours);
+
+    // 0-3点统计
+    if (!isNoOt && times.length) {
+      const last = times[times.length-1];
+      if (last.h < 6) {
+        if (last.h===0) stats['0点']++; else if (last.h===1) stats['1点']++;
+        else if (last.h===2) stats['2点']++; else if (last.h===3) stats['3点']++;
+      }
+    }
+
+    // 缺卡
+    const {count: mc, types: mt} = calcMissingCards(times, dept);
+    stats.缺卡次数 += mc;
+    stats.missingDaily.push(mt);
+  }
+
+  stats.有薪天数 = stats.平时出勤天数 + stats.周末天数 + stats.法定假日天数 + stats.调休天数;
+  stats.加班总时长 = stats.平时加班工时 + stats.周末加班工时;
+  return stats;
+}
+
+// ============================================================
+// 渲染摘要
+// ============================================================
+function renderSummary() {
+  const totalEmps = empStats.length;
+  const totalLate = empStats.reduce((s,e)=>s+e.迟到次数,0);
+  const totalMissing = empStats.reduce((s,e)=>s+e.缺卡次数,0);
+  const totalOt = empStats.reduce((s,e)=>s+e.加班总时长,0);
+  const totalAttend = empStats.reduce((s,e)=>s+e.平时出勤天数+e.周末天数,0);
+  const depts = new Set(empStats.map(e=>e.dept));
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="num">${totalEmps}</div><div class="label">员工总数</div></div>
+    <div class="stat-card"><div class="num">${depts.size}</div><div class="label">部门数量</div></div>
+    <div class="stat-card"><div class="num">${totalAttend.toFixed(1)}</div><div class="label">总出勤天数</div></div>
+    <div class="stat-card"><div class="num red">${totalLate}</div><div class="label">迟到总次数</div></div>
+    <div class="stat-card"><div class="num red">${totalMissing}</div><div class="label">缺卡总次数</div></div>
+    <div class="stat-card"><div class="num">${totalOt.toFixed(1)}h</div><div class="label">加班总时长</div></div>
+  `;
+}
+
+// ============================================================
+// 渲染预览表格
+// ============================================================
+function renderPreview() {
+  const preview = empStats.slice(0, 20);
+  const dayCount = dateHeaders.length;
+  // 只显示前15个日期列，避免太宽
+  const showDays = Math.min(dayCount - 1, 15);
+
+  let html = '<table><thead><tr>';
+  html += '<th>姓名</th><th>工号</th><th>部门</th>';
+  for (let i = 0; i < showDays; i++) {
+    const isWe = satSunCols.includes(i);
+    html += `<th class="${isWe?'orange-bg':''}">${String(dateHeaders[i]).replace(/\n/,'<br>')}</th>`;
+  }
+  html += '<th>平时出勤</th><th>周末天数</th><th>有薪天数</th><th>迟到次数</th><th>缺卡次数</th><th>加班总时长</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const st of preview) {
+    // 打卡行
+    html += `<tr><td rowspan="2">${st.name}</td><td rowspan="2">${st.id}</td><td rowspan="2">${st.dept}</td>`;
+    for (let i = 0; i < showDays; i++) {
+      const isWe = satSunCols.includes(i);
+      const rawDay = st.rawDays[i] || '';
+      const missing = st.missingDaily[i] || [];
+      const latePunch = st.latePunchDaily[i];
+      let lines = rawDay ? rawDay.split('\n') : [];
+      // 插入缺卡标记
+      const insertions = [];
+      for (const mt of missing) {
+        if (mt==='morning_start') insertions.push({pos:0,label:'缺卡'});
+        else if (mt==='noon_end') { let p=lines.findIndex(l=>{ try{return parseInt(l.split(':')[0])>=13;}catch{return false;}}); if(p<0)p=lines.length; insertions.push({pos:p,label:'缺卡'}); }
+        else if (mt==='afternoon_start') { let p=lines.findIndex(l=>{try{const h=parseInt(l.split(':')[0]);return h>=17||l==='缺卡';}catch{return false;}}); if(p<0)p=lines.length; insertions.push({pos:p,label:'缺卡'}); }
+        else if (mt==='afternoon_end') { let p=lines.findIndex(l=>{try{const h=parseInt(l.split(':')[0]);return h>=18||l==='缺卡';}catch{return false;}}); if(p<0)p=lines.length; insertions.push({pos:p,label:'缺卡'}); }
+        else insertions.push({pos:lines.length, label:'缺卡'});
+      }
+      insertions.sort((a,b)=>b.pos-a.pos);
+      for (const ins of insertions) lines.splice(ins.pos,0,'缺卡');
+      const cellHtml = lines.map(l=> l==='缺卡' ? `<span class="red">缺卡</span>` : (l===latePunch ? `<span class="red">${l}</span>` : l)).join('<br>');
+      html += `<td class="punch-cell ${isWe?'orange-bg':''}">${cellHtml}</td>`;
+    }
+    // 统计列（rowspan=2）
+    html += `<td rowspan="2">${st.平时出勤天数}</td><td rowspan="2">${st.周末天数}</td><td rowspan="2">${st.有薪天数}</td>`;
+    html += `<td rowspan="2" class="${st.迟到次数>0?'red':''}">${st.迟到次数}</td>`;
+    html += `<td rowspan="2" class="${st.缺卡次数>0?'red':''}">${st.缺卡次数}</td>`;
+    html += `<td rowspan="2" class="${st.加班总时长>0?'red':''}">${st.加班总时长||''}</td>`;
+    html += '</tr>';
+    // 加班行
+    html += '<tr>';
+    for (let i = 0; i < showDays; i++) {
+      const isWe = satSunCols.includes(i);
+      const ot = st.overtimeDaily[i];
+      html += `<td class="${isWe?'orange-bg':''} ${ot&&ot!==0?'red':''}">${ot&&ot!==0?ot:''}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('previewTable').innerHTML = html;
+}
+
+// ============================================================
+// 导出 Excel（ExcelJS — 完整格式）
+// ============================================================
+
+function buildCellText(processedDay, missingTypes, latePunch) {
+  // 构建打卡文本，插入缺卡标记，返回 rich text segments
+  let lines = processedDay ? processedDay.split('\n') : [];
+
+  // 插入缺卡标记
+  if (missingTypes && missingTypes.length) {
+    const insertions = [];
+    for (const mt of missingTypes) {
+      if (mt === 'morning_start') {
+        insertions.push({ pos: 0, label: '缺卡' });
+      } else if (mt === 'noon_end') {
+        let p = lines.findIndex(l => { try { return parseInt(l.split(':')[0]) >= 13; } catch(e) { return false; } });
+        if (p < 0) p = lines.length;
+        insertions.push({ pos: p, label: '缺卡' });
+      } else if (mt === 'afternoon_start') {
+        let p = lines.findIndex(l => { try { const h = parseInt(l.split(':')[0]); return h >= 17 || l === '缺卡'; } catch(e) { return false; } });
+        if (p < 0) p = lines.length;
+        insertions.push({ pos: p, label: '缺卡' });
+      } else if (mt === 'afternoon_end') {
+        let p = lines.findIndex(l => { try { const h = parseInt(l.split(':')[0]); return h >= 18 || l === '缺卡'; } catch(e) { return false; } });
+        if (p < 0) p = lines.length;
+        insertions.push({ pos: p, label: '缺卡' });
+      } else {
+        insertions.push({ pos: lines.length, label: '缺卡' });
+      }
+    }
+    insertions.sort((a, b) => b.pos - a.pos);
+    for (const ins of insertions) lines.splice(ins.pos, 0, '缺卡');
+  }
+
+  // 构建 rich text: [{text, color, font}]
+  const segments = [];
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (i > 0) segments.push({ text: '\n', color: '000000' });
+    if (l === '缺卡') {
+      segments.push({ text: '缺卡', color: 'FF0000' });
+    } else if (l === latePunch) {
+      segments.push({ text: l, color: 'FF0000' });
+    } else {
+      segments.push({ text: l, color: '000000' });
+    }
+  }
+  return segments;
+}
+
+async function exportExcel() {
+  logMsg('ok', '开始生成Excel（完整格式）...');
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = '考勤记录处理工具';
+  wb.created = new Date();
+
+  const ws = wb.addWorksheet('考勤记录', {
+    properties: { defaultRowHeight: 18 }
+  });
+
+  const NEW_COLS = ['平时','周末','共计','平时出勤天数','平时加班工时','周末天数','周末加班工时',
+    '法定假日天数','调休天数','有薪天数','迟到次数','缺卡次数','0点','1点','2点','3点',
+    '迟到1-10分','迟到11-30分','迟到31-59分','迟到1小时以上','加班总时长','备注','签名确认'];
+
+  const dayCount = dateHeaders.length; // 含下月1号
+  const totalCols = 3 + dayCount + NEW_COLS.length;
+
+  // ---- 列宽（对照Python版） ----
+  ws.getColumn(1).width = 10;   // 姓名
+  ws.getColumn(2).width = 12;   // 工号
+  ws.getColumn(3).width = 12;   // 部门
+  for (let i = 0; i < dayCount; i++) ws.getColumn(4 + i).width = 7;
+  for (let i = 0; i < NEW_COLS.length; i++) {
+    if (i === 19) ws.getColumn(4 + dayCount + i).width = 25;  // 加班总时长
+    else ws.getColumn(4 + dayCount + i).width = 8;
+  }
+
+  // ---- 冻结窗格 ----
+  ws.views = [{ state: 'frozen', ySplit: 1, xSplit: 3, topLeftCell: 'D2', activeCell: 'A1' }];
+
+  // ---- 样式定义（对照Python版） ----
+  const thinBorder = {
+    top: { style: 'thin', color: { argb: 'FF000000' } },
+    left: { style: 'thin', color: { argb: 'FF000000' } },
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+    right: { style: 'thin', color: { argb: 'FF000000' } }
+  };
+  const centerAlign = { vertical: 'middle', horizontal: 'center', wrapText: true };
+
+  // 周末橙色（对照Python版 FFC000）
+  const orangeFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFC000' } };
+  // 表头深灰（对照Python版 646A73）
+  const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF646A73' } };
+  // 全部宋体12号，不加粗（对照Python版）
+  const headerFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FFFFFFFF' } };
+  const normalFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FF000000' } };
+  const redFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FFFF0000' } };
+  const redBoldFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FFFF0000' } };
+  const richTextBlackFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FF000000' } };
+  const richTextRedFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FFFF0000' } };
+
+  // ---- 第1行：表头 ----
+  const headerRow = ws.getRow(1);
+  headerRow.height = 30;
+  headerRow.values = ['姓名', '工号', '部门', ...dateHeaders.map(h => String(h)), ...NEW_COLS];
+  headerRow.eachCell({ includeEmpty: true }, (cell, colNum) => {
+    cell.font = headerFont;
+    cell.alignment = centerAlign;
+    cell.border = thinBorder;
+    cell.fill = headerFill;
+  });
+  // 周末列橙色（覆盖深灰）
+  for (const idx of satSunCols) {
+    const c = headerRow.getCell(4 + idx);
+    c.fill = orangeFill;
+  }
+
+  // ---- 数据行 ----
+  let excelRow = 2;
+  for (const st of empStats) {
+    const rowA_Num = excelRow;
+    const rowB_Num = excelRow + 1;
+
+    // === Row A: 打卡时间 ===
+    const rowA = ws.getRow(rowA_Num);
+    rowA.height = 100;
+
+    // 前三列（rowA+B合并）
+    rowA.getCell(1).value = st.name;
+    rowA.getCell(2).value = st.id;
+    rowA.getCell(3).value = st.dept;
+
+    // 每日打卡列（用原始数据 rawDays，不动）
+    for (let i = 0; i < st.rawDays.length; i++) {
+      const segments = buildCellText(st.rawDays[i] || '', st.missingDaily[i], st.latePunchDaily[i]);
+      const cell = rowA.getCell(4 + i);
+      // 用 rich text，全部宋体12号
+      const richParts = segments.map(seg => ({
+        text: seg.text,
+        font: seg.color === 'FF0000' ? { ...richTextRedFont } : { ...richTextBlackFont }
+      }));
+      cell.value = { richText: richParts };
+      cell.alignment = centerAlign;
+    }
+
+    // 平时/周末/共计 → RowA 留空（RowB写公式）
+    const sumColStart = 4 + dayCount; // AJ列开始
+    rowA.getCell(sumColStart).value = '';
+    rowA.getCell(sumColStart + 1).value = '';
+    rowA.getCell(sumColStart + 2).value = '';
+
+    // 后20列统计（RowA）
+    const statRowA_Values = [
+      st.平时出勤天数, st.平时加班工时, st.周末天数, st.周末加班工时,
+      st.法定假日天数, st.调休天数, st.有薪天数,
+      st.迟到次数 || '', st.缺卡次数 || '',
+      st['0点'] || '', st['1点'] || '', st['2点'] || '', st['3点'] || '',
+      st['迟到1-10分'] || '', st['迟到11-30分'] || '', st['迟到31-59分'] || '', st['迟到1小时以上'] || '',
+      st.加班总时长 || '', st.备注 || '', ''
+    ];
+    for (let i = 0; i < statRowA_Values.length; i++) {
+      rowA.getCell(sumColStart + 3 + i).value = statRowA_Values[i];
+    }
+
+    // RowA 样式
+    rowA.eachCell({ includeEmpty: true }, (cell, colNum) => {
+      cell.border = thinBorder;
+      cell.alignment = centerAlign;
+      if (!cell.font || !cell.font.name) {
+        cell.font = normalFont;
+      }
+    });
+
+    // === Row B: 加班时长 ===
+    const rowB = ws.getRow(rowB_Num);
+    rowB.height = 20;
+
+    // 前三列留空（合并）
+    // 每日加班列
+    for (let i = 0; i < st.overtimeDaily.length; i++) {
+      const ot = st.overtimeDaily[i];
+      const cell = rowB.getCell(4 + i);
+      if (ot && ot !== 0) {
+        cell.value = ot;
+        cell.font = redFont;
+      } else {
+        cell.value = '';
+      }
+      cell.alignment = centerAlign;
+    }
+
+    // 平时/周末/共计 = 公式
+    const colLetter = (n) => {
+      let s = '';
+      while (n > 0) { n--; s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26); }
+      return s;
+    };
+
+    // 找出工作日和周末的列号（排除下月1号，即最后一个day列）
+    const actualDays = dayCount - 1; // 不含下月1号
+    const weekdayCols = [], weekendCols = [];
+    for (let i = 0; i < actualDays; i++) {
+      const cl = colLetter(4 + i);
+      if (satSunCols.includes(i)) weekendCols.push(cl);
+      else weekdayCols.push(cl);
+    }
+
+    // 平时 = SUMIF rowA 是工作日
+    const weekdaySum = weekdayCols.length ? weekdayCols.map(c => c + rowB_Num).join(',') : '';
+    rowB.getCell(sumColStart).value = weekdaySum ? { formula: `SUM(${weekdaySum})` } : 0;
+    rowB.getCell(sumColStart).font = redBoldFont;
+
+    const weekendSum = weekendCols.length ? weekendCols.map(c => c + rowB_Num).join(',') : '';
+    rowB.getCell(sumColStart + 1).value = weekendSum ? { formula: `SUM(${weekendSum})` } : 0;
+    rowB.getCell(sumColStart + 1).font = redBoldFont;
+
+    const pingCol = colLetter(sumColStart);
+    const zhouCol = colLetter(sumColStart + 1);
+    rowB.getCell(sumColStart + 2).value = { formula: `=${pingCol}${rowB_Num}+${zhouCol}${rowB_Num}` };
+    rowB.getCell(sumColStart + 2).font = redBoldFont;
+
+    // 后20列留空
+    for (let i = 0; i < 20; i++) {
+      rowB.getCell(sumColStart + 3 + i).value = '';
+    }
+
+    // RowB 样式
+    rowB.eachCell({ includeEmpty: true }, (cell, colNum) => {
+      cell.border = thinBorder;
+      cell.alignment = centerAlign;
+      if (!cell.font || !cell.font.name) {
+        cell.font = normalFont;
+      }
+    });
+
+    // 周末列橙色（两行都加）
+    for (const idx of satSunCols) {
+      rowA.getCell(4 + idx).fill = orangeFill;
+      rowB.getCell(4 + idx).fill = orangeFill;
+    }
+
+    // === 合并单元格：姓名/工号/部门 ===
+    for (let col = 1; col <= 3; col++) {
+      ws.mergeCells(rowA_Num, col, rowB_Num, col);
+    }
+
+    // === RowA 统计列也合并 ===
+    for (let i = 0; i < statRowA_Values.length; i++) {
+      ws.mergeCells(rowA_Num, sumColStart + 3 + i, rowB_Num, sumColStart + 3 + i);
+    }
+
+    excelRow += 2;
+  }
+
+  // ---- 生成文件 ----
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const now = new Date();
+  const fname = `考勤记录表_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`;
+  saveAs(blob, fname);
+  logMsg('ok', `已导出：${fname}`);
+}
+</script>
+</body>
+</html>
