@@ -564,7 +564,9 @@ function calcMissingCards(times, dept) {
     }
     const hasAfWork = hasAfStart || hasAfEnd || hasOtEnd;
     if (hasAfWork) {
-      if (!hasAfStart && !hasNoonArr && !hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_start'); }
+      // 缺afternoon_start：没有afternoon_start也没有noon_buffer区间的卡
+      // 注意：有afternoon_end不代表有afternoon_start（如06:50/12:02/16:31 → 缺下午上班卡）
+      if (!hasAfStart && !hasNoonArr) { count++; types.push('afternoon_start'); }
       if (!hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_end'); }
     }
     if (hasOtEnd && !cls.overtime_start.length && !hasAfEnd) { count++; types.push('overtime_start'); }
