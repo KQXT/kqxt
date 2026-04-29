@@ -197,14 +197,14 @@ function parseTimes(str) {
   return times;
 }
 
-// 去重（间隔<10分钟合并）
+// 去重（间隔<5分钟合并）
 function dedupTimes(times) {
   if (times.length <= 1) return times;
   const res = [times[0]];
   for (let i = 1; i < times.length; i++) {
     let gap = timeToMin(times[i]) - timeToMin(res[res.length - 1]);
     if (gap < 0) gap += 1440;
-    if (gap >= 10) res.push(times[i]);
+    if (gap >= 5) res.push(times[i]);
   }
   return res;
 }
@@ -310,7 +310,7 @@ function classifyPunchTimes(times) {
   noonBuffer.sort((a,b) => a.idx - b.idx);
   const gapFlags = [false];
   for (let i = 1; i < noonBuffer.length; i++) {
-    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) > 10);
+    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) > 5);
   }
   let noonCount = 0;
   for (let i = 0; i < noonBuffer.length; i++) {
