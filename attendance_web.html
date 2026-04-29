@@ -968,7 +968,8 @@ function buildCellText(processedDay, missingTypes, latePunch) {
         if (p < 0) p = lines.length;
         insertions.push({ pos: p, label: '缺卡' });
       } else if (mt === 'afternoon_start') {
-        let p = lines.findIndex(l => { try { const h = parseInt(l.split(':')[0]); return h >= 17 || l === '缺卡'; } catch(e) { return false; } });
+        // 找第一个下午时段(>=13:00)的卡前面插入，表示缺的是下午上班卡
+        let p = lines.findIndex(l => { try { const h = parseInt(l.split(':')[0]); return h >= 13 || l === '缺卡'; } catch(e) { return false; } });
         if (p < 0) p = lines.length;
         insertions.push({ pos: p, label: '缺卡' });
       } else if (mt === 'afternoon_end') {
