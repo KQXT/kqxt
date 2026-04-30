@@ -530,26 +530,6 @@ function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
 // 缺卡计算
 function calcMissingCards(times, dept) {
   if (!times.length) return {count:0, types:[]};
-  if (dept.includes('保安') || dept.includes('卫生')) {
-    const normal = times.filter(t=>t.h>=6);
-    const midnight = times.filter(t=>t.h<6);
-    const morning = normal.filter(t=>t.h<12);
-    const afternoon = normal.filter(t=>t.h>=15);
-    if (!morning.length && !afternoon.length) return {count:0, types:[]};
-    let count=0, types=[];
-    if (morning.length) {
-      if (morning.length >= 2) {} else {
-        if (morning[0].h >= 10) { count++; types.push('morning_start'); }
-        else { count++; types.push('noon_end'); }
-      }
-    }
-    const eveCards = afternoon.filter(t=>t.h>=15 && t.h<17);
-    if (eveCards.length) {
-      const hasEnd = afternoon.some(t=>t.h>=17 && t.h<=23) || midnight.length > 0;
-      if (!hasEnd) { count++; types.push('afternoon_end'); }
-    }
-    return {count, types};
-  }
 
   const midnight = times.filter(t=>t.h<6);
   let normal = times.filter(t=>t.h>=6);
@@ -580,8 +560,8 @@ function calcMissingCards(times, dept) {
     const hasAfWork = hasAfStart || hasAfEnd || hasOtEnd;
     if (hasAfWork) {
       // 缺afternoon_start：没有afternoon_start也没有noon_buffer区间的卡
-      // 注意：有afternoon_end不代表有afternoon_start（如06:50/12:02/16:31 → 缺下午上班卡）
-      if (!hasAfStart && !hasNoonArr) { count++; types.push('afternoon_start'); }
+      // 有afternoon_end/overtime_start说明下午来了，不判缺afternoon_start
+      if (!hasAfStart && !hasNoonArr && !hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_start'); }
       if (!hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_end'); }
     }
     if (hasOtEnd && !cls.overtime_start.length && !hasAfEnd) { count++; types.push('overtime_start'); }
