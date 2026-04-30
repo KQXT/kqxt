@@ -462,7 +462,9 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
       afEnd = normalEndTime;
     }
     let afMin = timeToMin(afEnd) - timeToMin(afStart);
-    if (timeToMin(normalEndTime) > 18*60) afMin -= 30;
+    // 扣休息时间条件：9:00/10:00班下午>=2h才扣30min休息
+    // 避免"下午只上1h却扣30min"导致总工时不足4h的bug
+    if (timeToMin(normalEndTime) > 18*60 && afMin >= 2*60) afMin -= 30;
     if (afMin > 0) afHours = afMin / 60;
   }
 
