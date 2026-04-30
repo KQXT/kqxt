@@ -219,64 +219,80 @@ function dedupTimes(times) {
   return res;
 }
 
-// 班次匹配（打分法 + 同分优先不迟到）
+// 班次匹配（两层筛选：打分法 + 工时满足度优先不迟到）
 function inferShiftFromDept(times, dept) {
+  // 三条件匹配（按优先级）：
+  // 1. 能上满：最后一张打卡 >= 班次正常下班时间（允许合理提前5分钟）
+  // 2. 最接近：第一张上班打卡离哪个班次start最近
+  // 3. 同距离时优先不迟到：距离相等的班次中，优先选第一张打卡 <= 班次start的
   const shifts = getDeptShifts(dept);
   if (!shifts.length) return null;
   const normalTimes = times.filter(t => t.h >= 6);
   if (!normalTimes.length) return null;
 
-  // 找第一张上班打卡时间（排除凌晨0-5点）
   const firstPunch = normalTimes[0];
   const firstPunchMin = timeToMin(firstPunch);
+  const lastPunch = times[times.length - 1];
+  const lastPunchMin = timeToMin(lastPunch);
 
-  let bestShift = null, bestScore = -999, bestNotLate = false;
+  const hasMorning = normalTimes.some(t => t.h < 12);
+  const hasAfternoon = normalTimes.some(t => t.h >= 13);
 
+  // ── 条件1：筛选能上满半天/一天的班次 ──
+  const canFill = [];
   for (const shift of shifts) {
     const sStart = parseShiftTime(shift.start);
     const sEnd = parseShiftTime(shift.end);
-    if (sStart === null) continue;
-    let score = 0;
-    const isNight = sStart >= 15 * 60;
+    if (sStart === null || sEnd === null) continue;
 
-    if (isNight) {
-      const hasEarly = normalTimes.some(t => t.h < 12);
-      if (!hasEarly) score += 15;
-      if (normalTimes.some(t => Math.abs(timeToMin(t) - sStart) <= 30)) score += 10;
-      if (sEnd !== null && normalTimes.some(t => Math.abs(timeToMin(t) - sEnd) <= 30)) score += 10;
+    // 晚班特殊（上班>=15:00）：没有上午卡才考虑晚班
+    if (sStart >= 15 * 60 && hasMorning) continue;
+
+    // 半天班特殊：
+    // 上午半天（下班<=12:00）：有下午卡不可能是上午半天
+    if (sEnd <= 12 * 60 && hasAfternoon) continue;
+    // 下午半天（上班>=13:30）：有上午卡不可能是下午半天
+    if (sStart >= 13 * 60 && hasMorning) continue;
+
+    // 判断最后一张打卡是否打到班次正常下班时间或之后
+    let lastGteEnd;
+    if (sEnd <= 30) {
+      // 跨天班次（如下班00:00），凌晨卡也算
+      lastGteEnd = (lastPunchMin <= sStart && lastPunchMin + 24 * 60 >= sEnd) ||
+                   lastPunchMin >= sEnd;
     } else {
-      const hasMorning = normalTimes.some(t => t.h < 12);
-      const hasAfternoon = normalTimes.some(t => t.h >= 13);
-      if (normalTimes.some(t => Math.abs(timeToMin(t) - sStart) <= 30)) score += 10;
-      if (sEnd !== null) {
-        let nearEnd = normalTimes.some(t => Math.abs(timeToMin(t) - sEnd) <= 45);
-        if (!nearEnd && sEnd >= 17 * 60) {
-          nearEnd = normalTimes.some(t => timeToMin(t) >= 17 * 60 && timeToMin(t) < 18 * 60);
-        }
-        if (nearEnd) {
-          score += 10;
-        } else {
-          if (normalTimes.some(t => timeToMin(t) > sEnd)) score += 5;
-        }
-      }
-      if (sEnd && sEnd <= 12 * 60) {
-        if (!hasAfternoon) score += 5; else score -= 5;
-      }
-      if (sStart >= 13 * 60) {
-        if (!hasMorning) score += 5; else score -= 5;
-      }
+      lastGteEnd = lastPunchMin >= sEnd - 5;  // 允许5分钟提前
     }
 
-    // 判断这个班次是否"不迟到"：上班时间 <= 第一张打卡时间
-    const notLate = (sStart <= firstPunchMin);
-
-    if (score > bestScore || (score === bestScore && notLate && !bestNotLate)) {
-      bestScore = score;
-      bestShift = shift;
-      bestNotLate = notLate;
-    }
+    if (lastGteEnd) canFill.push(shift);
   }
-  return bestScore >= 5 ? bestShift : null;
+
+  // ── 条件2：在能上满的班次中，选最接近的 ──
+  let pool;
+  if (!canFill.length) {
+    // 没有能上满的班次，回退：直接按最接近选（不要求上满）
+    const fallback = shifts.filter(s => parseShiftTime(s.start) !== null);
+    if (!fallback.length) return null;
+    pool = fallback;
+  } else {
+    pool = canFill;
+  }
+
+  // 按第一张打卡与班次start的距离排序
+  pool.sort((a, b) =>
+    Math.abs(firstPunchMin - parseShiftTime(a.start)) -
+    Math.abs(firstPunchMin - parseShiftTime(b.start))
+  );
+
+  // ── 条件3：同距离时优先不迟到的 ──
+  const bestDist = Math.abs(firstPunchMin - parseShiftTime(pool[0].start));
+  const sameDist = pool.filter(s => Math.abs(firstPunchMin - parseShiftTime(s.start)) === bestDist);
+
+  if (sameDist.length === 1) return sameDist[0];
+
+  // 距离相同时，优先选不迟到的（第一张打卡 <= 班次start）
+  const notLate = sameDist.filter(s => firstPunchMin <= parseShiftTime(s.start));
+  return notLate.length ? notLate[0] : sameDist[0];
 }
 
 function getShiftStartFromDept(times, dept) {
