@@ -390,11 +390,12 @@ function inferMissingMorningStart(dayIdx, processedDays, dept) {
 // 计算全天工时
 function calculateAllHours(times, dept, dayIdx, processedDays) {
   if (!times.length) return {morning:0, afternoon:0, night:0, total:0};
-  const midnightCards = times.filter(t=>t.h<6);
-  const normalCards = times.filter(t=>t.h>=6);
+  const midCutoff = (dept.includes('保安') || dept.includes('卫生')) ? 5 : 6;
+  const midnightCards = times.filter(t=>t.h<midCutoff);
+  const normalCards = times.filter(t=>t.h>=midCutoff);
   if (midnightCards.length && !normalCards.length) return {morning:0, afternoon:0, night:0, total:0};
 
-  const hasMorningCard = times.some(t=>t.h>=6 && t.h<12);
+  const hasMorningCard = times.some(t=>t.h>=midCutoff && t.h<12);
   const hasAfternoonCard = times.some(t=>t.h>=13);
 
   // 只有下午/晚上（无上午卡）
@@ -531,11 +532,13 @@ function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
 function calcMissingCards(times, dept) {
   if (!times.length) return {count:0, types:[]};
 
-  const midnight = times.filter(t=>t.h<6);
-  let normal = times.filter(t=>t.h>=6);
+  // 保安/卫生组06:30上班，05:xx可能是早到，不算凌晨卡
+  const midCutoff = (dept.includes('保安') || dept.includes('卫生')) ? 5 : 6;
+  const midnight = times.filter(t=>t.h<midCutoff);
+  let normal = times.filter(t=>t.h>=midCutoff);
   if (midnight.length && !normal.length) return {count:0, types:[]};
   if (midnight.length && normal.length) times = normal;
-  normal = times.filter(t=>t.h>=6);
+  normal = times.filter(t=>t.h>=midCutoff);
   if (!normal.length) return {count:0, types:[]};
 
   const hasAfCard = normal.some(t=>t.h>=13);
@@ -577,13 +580,15 @@ function calcMissingCards(times, dept) {
 }
 
 // 凌晨卡跨天处理
-function preprocessCrossMidnight(empDays) {
+function preprocessCrossMidnight(empDays, dept) {
   const processed = [...empDays];
+  const isWeisheng = dept && dept.includes('卫生');
+  const midCutoff = isWeisheng ? 5 : 6;
   // 首日凌晨卡处理
   if (processed.length && processed[0]) {
     const day0Times = parseTimes(processed[0]);
-    const midnights = day0Times.filter(t=>t.h<6);
-    const normals = day0Times.filter(t=>t.h>=6);
+    const midnights = day0Times.filter(t=>t.h<midCutoff);
+    const normals = day0Times.filter(t=>t.h>=midCutoff);
     if (midnights.length && normals.length) {
       processed[0] = normals.sort((a,b)=>timeToMin(a)-timeToMin(b)).map(t=>`${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`).join('\n');
     }
@@ -595,16 +600,16 @@ function preprocessCrossMidnight(empDays) {
     const todayTimes = parseTimes(todayStr);
     const tomorrowTimes = parseTimes(tomorrowStr);
     if (!todayTimes.length || !tomorrowTimes.length) continue;
-    const todayNormal = todayTimes.filter(t=>t.h>=5);
+    const todayNormal = todayTimes.filter(t=>t.h>=midCutoff);
     if (!todayNormal.length) continue;
     const lastToday = todayNormal.reduce((a,b)=>timeToMin(a)>=timeToMin(b)?a:b);
     if (lastToday.h < 17) continue;
-    const tomorrowMidnights = tomorrowTimes.filter(t=>t.h<6);
+    const tomorrowMidnights = tomorrowTimes.filter(t=>t.h<midCutoff);
     if (!tomorrowMidnights.length) continue;
     const midnight = tomorrowMidnights.reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
     const newToday = [...todayTimes, midnight].sort((a,b)=>{
-      const ka = a.h<5?1440+timeToMin(a):timeToMin(a);
-      const kb = b.h<5?1440+timeToMin(b):timeToMin(b);
+      const ka = a.h<midCutoff?1440+timeToMin(a):timeToMin(a);
+      const kb = b.h<midCutoff?1440+timeToMin(b):timeToMin(b);
       return ka-kb;
     });
     const newTomorrow = tomorrowTimes.filter(t=>!(t.h===midnight.h&&t.m===midnight.m));
@@ -932,7 +937,7 @@ async function startProcess() {
 function processEmployee(emp) {
   const dept = emp.dept;
   const isNoOt = dept.includes('保安') || dept.includes('卫生');
-  const processedDays = preprocessCrossMidnight([...emp.days]);
+  const processedDays = preprocessCrossMidnight([...emp.days], dept);
 
   const stats = {
     name: emp.name, id: emp.id, dept,
@@ -969,22 +974,36 @@ function processEmployee(emp) {
 
     // === 迟到判断 ===
     let late=false, latePunch=null, lateMin=0;
-    const normalTimes = times.filter(t=>t.h>=6);
+    const midCutoff = (dept.includes('保安') || dept.includes('卫生')) ? 5 : 6;
+    const normalTimes = times.filter(t=>t.h>=midCutoff);
     if (dept.includes('保安') || dept.includes('卫生')) {
-      const hasMorn = normalTimes.some(t=>t.h<12);
-      const hasEve = normalTimes.some(t=>t.h>=15 && t.h<17);
-      if (hasMorn) {
-        const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
-        if (timeToMin(first) > 6*60+30) {
-          late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
-          lateMin = timeToMin(first) - (6*60+30);
+      if (dept.includes('保安')) {
+        // 保安组：早班06:30 / 晚班16:00
+        const hasMorn = normalTimes.some(t=>t.h<12);
+        const hasEve = normalTimes.some(t=>t.h>=15 && t.h<17);
+        if (hasMorn) {
+          const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+          if (timeToMin(first) > 6*60+30) {
+            late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
+            lateMin = timeToMin(first) - (6*60+30);
+          }
         }
-      }
-      if (hasEve && !late) {
-        const first = normalTimes.filter(t=>t.h>=15&&t.h<17).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
-        if (timeToMin(first) > 16*60) {
-          late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
-          lateMin = timeToMin(first) - 16*60;
+        if (hasEve && !late) {
+          const first = normalTimes.filter(t=>t.h>=15&&t.h<17).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+          if (timeToMin(first) > 16*60) {
+            late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
+            lateMin = timeToMin(first) - 16*60;
+          }
+        }
+      } else {
+        // 卫生组：只有06:30-16:30早班
+        const hasMorn = normalTimes.some(t=>t.h<12);
+        if (hasMorn) {
+          const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+          if (timeToMin(first) > 6*60+30) {
+            late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
+            lateMin = timeToMin(first) - (6*60+30);
+          }
         }
       }
     } else if (normalTimes.length) {
