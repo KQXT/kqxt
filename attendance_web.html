@@ -1223,6 +1223,28 @@ function buildCellText(processedDay, missingTypes, latePunch) {
   return segments;
 }
 
+// 禁用Excel自动调整行高（防止打开后自动改变行高列宽）
+const JSZIP_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+
+async function fixRowHeights(xlsxBuffer) {
+  if (!window.JSZip) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = JSZIP_CDN;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  const zip = await JSZip.loadAsync(xlsxBuffer);
+  const sheetFile = zip.file('xl/worksheets/sheet1.xml');
+  if (!sheetFile) return xlsxBuffer;
+  let xml = await sheetFile.async('string');
+  xml = xml.replace(/<row /g, '<row customHeight="1" autoFitHeight="0" ');
+  zip.file('xl/worksheets/sheet1.xml', xml);
+  return await zip.generateAsync({ type: 'arraybuffer' });
+}
+
 async function exportExcel() {
   logMsg('ok', '开始生成Excel（完整格式）...');
 
@@ -1432,7 +1454,12 @@ async function exportExcel() {
   }
 
   // ---- 生成文件 ----
-  const buffer = await wb.xlsx.writeBuffer();
+  let buffer = await wb.xlsx.writeBuffer();
+
+  // 修改xlsx zip中的sheet1.xml，给所有行加上 customHeight="1" autoFitHeight="0"
+  // 这样Excel打开后不会自动调整行高
+  buffer = await fixRowHeights(buffer);
+
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const now = new Date();
   const fname = `考勤记录表_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`;
