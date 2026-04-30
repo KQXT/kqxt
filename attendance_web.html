@@ -525,9 +525,9 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
 function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
   const noOt = dept.includes('保安') || dept.includes('卫生');
   if (noOt) {
-    return {attendanceDays: times.length ? 1 : 0, paidDays: times.length ? 1 : 0, overtimeHours: 0};
+    return {attendanceDays: times.length ? 1 : 0, paidDays: times.length ? 1 : 0, overtimeHours: 0, halfDay: false};
   }
-  if (!times.length) return {attendanceDays:0, paidDays:0, overtimeHours:0};
+  if (!times.length) return {attendanceDays:0, paidDays:0, overtimeHours:0, halfDay:false};
 
   const {total: totalH} = calculateAllHours(times, dept, dayIdx, processedDays);
   let attendanceDays = totalH >= 8 ? 1 : totalH >= 4 ? 0.5 : 0;
@@ -553,7 +553,12 @@ function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
   } else if (remainOt < 0) {
     overtimeHours = Math.floor(remainOt * 2) * 0.5;
   }
-  return {attendanceDays, paidDays, overtimeHours};
+
+  // 半天标记：出勤0.5天时标记半天
+  // 但保安/卫生组已返回，不会到这里
+  const halfDay = (attendanceDays === 0.5);
+
+  return {attendanceDays, paidDays, overtimeHours, halfDay};
 }
 
 // 缺卡计算
@@ -975,7 +980,7 @@ function processEmployee(emp) {
     '0点':0,'1点':0,'2点':0,'3点':0,
     '迟到1-10分':0,'迟到11-30分':0,'迟到31-59分':0,'迟到1小时以上':0,
     加班总时长:0, 备注:'',
-    overtimeDaily:[], isWeekendDaily:[], lateDaily:[], latePunchDaily:[], missingDaily:[],
+    overtimeDaily:[], isWeekendDaily:[], lateDaily:[], latePunchDaily:[], missingDaily:[], halfDayDaily:[],
     processedDays,     // 计算用（含跨天凌晨卡归入前一天，可能含下月1号列）
     rawDays: emp.days,  // 显示用（原始数据，可能含下月1号列）
   };
@@ -986,13 +991,13 @@ function processEmployee(emp) {
     const timesStr = processedDays[dayIdx];
     if (!timesStr || timesStr.trim() === '' || timesStr.trim() === '-') {
       stats.overtimeDaily.push(0); stats.isWeekendDaily.push(false);
-      stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]);
+      stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]); stats.halfDayDaily.push(false);
       continue;
     }
     let times = parseTimes(timesStr);
     if (!times.length) {
       stats.overtimeDaily.push(0); stats.isWeekendDaily.push(false);
-      stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]);
+      stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]); stats.halfDayDaily.push(false);
       continue;
     }
     times = dedupTimes(times);
@@ -1066,10 +1071,11 @@ function processEmployee(emp) {
     stats.lateDaily.push(late); stats.latePunchDaily.push(latePunch);
 
     // === 出勤/加班 ===
-    const {attendanceDays, paidDays, overtimeHours} = calcShiftAndOvertime(times, dept, dayIdx, processedDays);
+    const {attendanceDays, paidDays, overtimeHours, halfDay} = calcShiftAndOvertime(times, dept, dayIdx, processedDays);
     if (isWeekend) { stats.周末天数 += attendanceDays; stats.周末加班工时 += overtimeHours; }
     else { stats.平时出勤天数 += attendanceDays; stats.平时加班工时 += overtimeHours; }
     stats.overtimeDaily.push(overtimeHours);
+    stats.halfDayDaily.push(halfDay);
 
     // 0-3点统计
     if (!isNoOt && times.length) {
@@ -1138,6 +1144,7 @@ function renderPreview() {
       const rawDay = st.rawDays[i] || '';
       const missing = st.missingDaily[i] || [];
       const latePunch = st.latePunchDaily[i];
+      const halfDay = st.halfDayDaily[i];
       let lines = rawDay ? rawDay.split('\n') : [];
       // 插入缺卡标记
       const insertions = [];
@@ -1150,7 +1157,15 @@ function renderPreview() {
       }
       insertions.sort((a,b)=>b.pos-a.pos);
       for (const ins of insertions) lines.splice(ins.pos,0,'缺卡');
-      const cellHtml = lines.map(l=> l==='缺卡' ? `<span class="red">缺卡</span>` : (l===latePunch ? `<span class="red">${l}</span>` : l)).join('<br>');
+      // 插入半天标记
+      if (halfDay) {
+        let firstCardLine = lines.find(l => l !== '缺卡');
+        let firstCardHour = 12;
+        if (firstCardLine) { try { firstCardHour = parseInt(firstCardLine.split(':')[0]); } catch(e) {} }
+        if (firstCardHour < 12) lines.push('半天');
+        else lines.unshift('半天');
+      }
+      const cellHtml = lines.map(l=> l==='缺卡' ? `<span class="red">缺卡</span>` : l==='半天' ? `<span class="red">半天</span>` : (l===latePunch ? `<span class="red">${l}</span>` : l)).join('<br>');
       html += `<td class="punch-cell ${isWe?'orange-bg':''}">${cellHtml}</td>`;
     }
     // 统计列（rowspan=2）
@@ -1176,7 +1191,7 @@ function renderPreview() {
 // 导出 Excel（ExcelJS — 完整格式）
 // ============================================================
 
-function buildCellText(processedDay, missingTypes, latePunch) {
+function buildCellText(processedDay, missingTypes, latePunch, halfDay) {
   // 构建打卡文本，插入缺卡标记，返回 rich text segments
   let lines = processedDay ? processedDay.split('\n') : [];
 
@@ -1207,13 +1222,33 @@ function buildCellText(processedDay, missingTypes, latePunch) {
     for (const ins of insertions) lines.splice(ins.pos, 0, '缺卡');
   }
 
-  // 构建 rich text: [{text, color, font}]
+  // 插入半天标记
+  if (halfDay) {
+    // 判断第一条实际打卡时间（排除"缺卡"标记）属于上午还是下午
+    // 找第一条非"缺卡"的行
+    let firstCardLine = lines.find(l => l !== '缺卡');
+    let firstCardHour = 12; // 默认下午
+    if (firstCardLine) {
+      try { firstCardHour = parseInt(firstCardLine.split(':')[0]); } catch(e) {}
+    }
+    if (firstCardHour < 12) {
+      // 上午卡在前 → 半天放在最后
+      lines.push('半天');
+    } else {
+      // 下午卡在前 → 半天放在最前
+      lines.unshift('半天');
+    }
+  }
+
+  // 构建 rich text: [{text, color}]
   const segments = [];
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
     if (i > 0) segments.push({ text: '\n', color: '000000' });
     if (l === '缺卡') {
       segments.push({ text: '缺卡', color: 'FF0000' });
+    } else if (l === '半天') {
+      segments.push({ text: '半天', color: 'FF0000' });
     } else if (l === latePunch) {
       segments.push({ text: l, color: 'FF0000' });
     } else {
@@ -1331,7 +1366,7 @@ async function exportExcel() {
 
     // 每日打卡列（用原始数据 rawDays，只导出 dateHeaders.length 天，不含下月1号）
     for (let i = 0; i < dateHeaders.length; i++) {
-      const segments = buildCellText(st.rawDays[i] || '', st.missingDaily[i], st.latePunchDaily[i]);
+      const segments = buildCellText(st.rawDays[i] || '', st.missingDaily[i], st.latePunchDaily[i], st.halfDayDaily[i]);
       const cell = rowA.getCell(4 + i);
       // 用 rich text，全部宋体12号
       const richParts = segments.map(seg => ({
