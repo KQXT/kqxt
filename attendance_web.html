@@ -556,8 +556,7 @@ function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
 
   // 半天标记：出勤0.5天且没有noon_end卡(12:00-12:29)时标记半天
   // 有noon_end卡说明上午来过（只是没打上午上班卡），不是半天休息
-  const midCutoff = 6;
-  const hasNoonEnd = times.some(t => t.h >= midCutoff && t.h === 12 && t.m < 30);
+  const hasNoonEnd = times.some(t => t.h === 12 && t.m < 30);
   const halfDay = (attendanceDays === 0.5 && !hasNoonEnd);
 
   return {attendanceDays, paidDays, overtimeHours, halfDay};
