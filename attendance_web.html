@@ -423,10 +423,12 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
 
   let mornHours=0, afHours=0, nightHours=0;
 
-  // 推断上班时间
+  // 推断上班时间 & 获取班次配置
   let morningStart = null;
+  let matchedShift = null;
   if (cls.morning_start.length) {
     morningStart = getShiftStartFromDept(times, dept);
+    matchedShift = inferShiftFromDept(times, dept);
   } else if (cls.noon_end.length && dayIdx !== undefined && processedDays) {
     morningStart = inferMissingMorningStart(dayIdx, processedDays, dept);
   }
@@ -462,7 +464,10 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
       afEnd = normalEndTime;
     }
     let afMin = timeToMin(afEnd) - timeToMin(afStart);
-    // 下午从13:30开始算，12:00-13:30的1.5h休息已自然扣除，无需额外扣
+    // 根据班次配置的break_min扣除下午休息时间（如9:00/10:00班break_min=30）
+    // 8:00班break_min=0则不扣，12:00-13:30的1.5h已在起算点自然扣除
+    const breakMin = (matchedShift && matchedShift.break_min) ? matchedShift.break_min : 0;
+    if (breakMin > 0 && afMin >= breakMin) afMin -= breakMin;
     if (afMin > 0) afHours = afMin / 60;
   }
 
