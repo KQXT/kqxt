@@ -76,6 +76,16 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
       </div>
       <input type="file" id="fileInput" accept=".xlsx,.xls">
       <div id="fileInfo" class="hidden" style="margin-top:12px; padding:10px; background:#f6ffed; border-radius:6px; color:#52c41a; font-size:13px;"></div>
+      <!-- 当文件缺少日期表头时，显示月份补填框 -->
+      <div id="monthPickerBox" class="hidden" style="margin-top:10px; padding:10px; background:#fffbe6; border:1px solid #ffe58f; border-radius:6px; font-size:13px;">
+        ⚠️ 未检测到日期表头（周六/周日标识），请补填考勤月份以正确标识周末：
+        <input type="number" id="inputYear" min="2020" max="2099" placeholder="年份" style="width:70px; margin:0 4px; padding:3px 6px; border:1px solid #d9d9d9; border-radius:4px;">
+        年
+        <input type="number" id="inputMonth" min="1" max="12" placeholder="月" style="width:50px; margin:0 4px; padding:3px 6px; border:1px solid #d9d9d9; border-radius:4px;">
+        月
+        <button onclick="applyManualMonth()" style="margin-left:8px; padding:3px 12px; background:#1890ff; color:#fff; border:none; border-radius:4px; cursor:pointer;">确认</button>
+        <span id="monthPickerStatus" style="margin-left:8px; color:#52c41a;"></span>
+      </div>
     </div>
   </div>
 
@@ -628,6 +638,7 @@ let dateHeaders = [];
 let satSunCols = [];
 let empStats = [];
 let processedResult = null;
+let hasNextMonthCol = false;  // 是否有下月1号列（凌晨卡跨天用）
 
 // ============================================================
 // UI 事件
@@ -645,10 +656,39 @@ uploadArea.addEventListener('drop', e => {
 });
 fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
+function fixSheetRef(wb) {
+  // 修复得力导出的xlsx文件dimension错误（如4月文件!ref=A1:AI2，实际数据有570行）
+  // 策略：遍历所有sheet，用实际行号范围覆盖!ref
+  for (const sn of wb.SheetNames) {
+    const ws = wb.Sheets[sn];
+    if (!ws['!ref']) continue;
+    // 找到所有行号（行号=属性名去掉列字母，如A3→3, Z100→100）
+    let maxR = 0;
+    const refMatch = ws['!ref'].match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i);
+    if (!refMatch) continue;
+    const minCol = refMatch[1], minRow = parseInt(refMatch[2]);
+    const origMaxCol = refMatch[3], origMaxRow = parseInt(refMatch[4]);
+    // 遍历所有cell，找最大行号
+    for (const key in ws) {
+      if (key[0] === '!') continue;
+      const m = key.match(/^([A-Z]+)(\d+)$/);
+      if (m) {
+        const r = parseInt(m[2]);
+        if (r > maxR) maxR = r;
+      }
+    }
+    if (maxR > origMaxRow) {
+      ws['!ref'] = minCol + minRow + ':' + origMaxCol + maxR;
+      console.log('修复sheet ' + sn + ' !ref: ' + ws['!ref'] + ' (原: ' + minCol + minRow + ':' + origMaxCol + origMaxRow + ')');
+    }
+  }
+}
+
 function handleFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
     rawWorkbook = XLSX.read(e.target.result, {type:'array', raw:false, cellDates:false, cellText:true, cellNF:false});
+    fixSheetRef(rawWorkbook); // 修复dimension错误
     parseExcel();
     document.getElementById('fileInfo').textContent = `✓ 已加载：${file.name}（${employees.length} 名员工，${dateHeaders.length} 天数据）`;
     document.getElementById('fileInfo').classList.remove('hidden');
@@ -660,29 +700,153 @@ function handleFile(file) {
 
 function parseExcel() {
   const ws = rawWorkbook.Sheets[rawWorkbook.SheetNames[0]];
-  const data = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
-  if (data.length < 3) { alert('文件格式不对，至少需要3行数据'); return; }
+  // blankrows: true 确保空行不丢失（row2是空行，不能跳过）
+  const data = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:'', blankrows:true});
 
-  const headers = data[0];
-  dateHeaders = headers.slice(3);
+  // ---- 自动检测表头行（row1）和员工数据起始行 ----
+  // 得力导出格式：row1=表头(姓名/工号/部门+日期), row2=空行, row3+=员工
+  // 但 SheetJS 某些情况下可能跳过空行，所以不能硬编码 i=2
+  // 策略：找到第一个col1="姓名"的行作为表头行，之后的非空行作为员工数据
+
+  let headerRowIdx = -1;
+  let empStartIdx = -1;
+  for (let i = 0; i < data.length; i++) {
+    const c0 = String(data[i][0] || '').trim();
+    const c1 = String(data[i][1] || '').trim();
+    const c2 = String(data[i][2] || '').trim();
+    if (c0 === '姓名' && (c1 === '工号' || c2 === '部门' || c1.includes('工号') || c2.includes('部门'))) {
+      headerRowIdx = i;
+      continue;
+    }
+    // 表头行之后的第一个有姓名的行就是员工起始行
+    if (headerRowIdx >= 0 && empStartIdx < 0 && c0 && c0 !== 'nan' && c0 !== '姓名') {
+      empStartIdx = i;
+      break;
+    }
+  }
+
+  if (headerRowIdx < 0) {
+    alert('文件格式不对，未找到表头行（姓名/工号/部门）');
+    return;
+  }
+  if (empStartIdx < 0) {
+    alert('文件格式不对，未找到员工数据');
+    return;
+  }
+
+  const headers = data[headerRowIdx];
+
+  // 获取日期列（col4开始），同时确定最大列数（避免空列导致某些员工days长度不一致）
+  const rawDateHeaders = [];
+  let maxCol = headers.length;
+  for (let i = empStartIdx; i < data.length; i++) {
+    if (data[i].length > maxCol) maxCol = data[i].length;
+  }
+  for (let j = 3; j < maxCol; j++) {
+    rawDateHeaders.push(String(headers[j] || ''));
+  }
+
+  // 过滤掉末尾的空列（得力导出可能保留空列，或导出不全月时后续列为空）
+  let trimEnd = rawDateHeaders.length;
+  while (trimEnd > 0 && rawDateHeaders[trimEnd - 1].trim() === '') trimEnd--;
+
+  const trimmedHeaders = rawDateHeaders.slice(0, trimEnd);
+  if (trimmedHeaders.length === 0) {
+    alert('文件格式不对，未找到日期列');
+    return;
+  }
+
+  // 检测下月1号列：最后一个日期列的月份是否不同于第一个日期列的月份
+  let firstMonth = null, lastMonth = null;
+  for (const h of trimmedHeaders) {
+    const m = h.match(/(\d{1,2})-(\d{1,2})/);
+    if (m) {
+      if (firstMonth === null) firstMonth = parseInt(m[1]);
+      lastMonth = parseInt(m[1]);
+    }
+  }
+  hasNextMonthCol = false;
+  if (firstMonth !== null && lastMonth !== null && lastMonth !== firstMonth) {
+    hasNextMonthCol = true; // 最后一列是下月1号
+  } else if (firstMonth !== null && trimmedHeaders.length >= 2) {
+    // 同月份：检查最后一列是否是"01"号（下月1号）
+    const lastDate = trimmedHeaders[trimmedHeaders.length - 1];
+    const lm = lastDate.match(/(\d{1,2})-(\d{1,2})/);
+    if (lm) {
+      const lastDay = parseInt(lm[2]);
+      const prevDate = trimmedHeaders[trimmedHeaders.length - 2];
+      const pm = prevDate.match(/(\d{1,2})-(\d{1,2})/);
+      if (pm) {
+        const prevDay = parseInt(pm[2]);
+        // 如果最后一列是1号，且倒数第二列是28/29/30/31（说明是跨月）
+        if (lastDay === 1 && prevDay >= 28) {
+          hasNextMonthCol = true;
+        }
+      }
+    }
+  }
+
+  // 如果有下月1号列，去掉它（它只用于凌晨卡跨天，不计入出勤/加班/迟到）
+  if (hasNextMonthCol) {
+    dateHeaders = trimmedHeaders.slice(0, -1);
+  } else {
+    dateHeaders = trimmedHeaders;
+  }
+
   satSunCols = [];
+
+  // 第一优先：从表头文字中找"周六"/"周日"
   for (let i = 0; i < dateHeaders.length; i++) {
     const h = String(dateHeaders[i]);
     if (h.includes('周六') || h.includes('周日')) satSunCols.push(i);
   }
 
+  // 如果表头没有星期信息，尝试从"MM-DD"格式日期解析出星期
+  if (satSunCols.length === 0) {
+    let detectedYear = new Date().getFullYear();
+    let detectedMonth = null;
+    for (let i = 0; i < dateHeaders.length; i++) {
+      const h = String(dateHeaders[i]);
+      const m = h.match(/(\d{1,2})-(\d{1,2})/);
+      if (m) {
+        if (!detectedMonth) detectedMonth = parseInt(m[1]);
+        const month = parseInt(m[1]);
+        const day = parseInt(m[2]);
+        const effectiveYear = (detectedMonth && month < detectedMonth) ? detectedYear + 1 : detectedYear;
+        try {
+          const d = new Date(effectiveYear, month - 1, day);
+          const dow = d.getDay();
+          if (dow === 0 || dow === 6) satSunCols.push(i);
+        } catch(e) {}
+      }
+    }
+  }
+
+  // 如果还是找不到，显示月份补填框，等待用户输入
+  if (satSunCols.length === 0) {
+    const now = new Date();
+    document.getElementById('inputYear').value = now.getFullYear();
+    document.getElementById('inputMonth').value = now.getMonth() + 1;
+    document.getElementById('monthPickerBox').classList.remove('hidden');
+    document.getElementById('monthPickerStatus').textContent = '';
+  } else {
+    document.getElementById('monthPickerBox').classList.add('hidden');
+  }
+
   employees = [];
-  for (let i = 2; i < data.length; i++) {
+  for (let i = empStartIdx; i < data.length; i++) {
     const row = data[i];
     const name = String(row[0]||'').trim();
     if (!name || name === 'nan') continue;
     const days = [];
-    for (let j = 3; j < headers.length; j++) {
+    for (let j = 3; j < 3 + rawDateHeaders.length; j++) {
       const v = String(row[j]||'').trim();
       days.push(v === 'nan' ? '' : v);
     }
     employees.push({name, id: String(row[1]||'').trim(), dept: String(row[2]||'').trim(), days});
   }
+
+  logMsg('ok', `日期列: ${dateHeaders.length}天${hasNextMonthCol ? ' + 下月1号列' : ''}, 周末列: ${satSunCols.length}个`);
 }
 
 function logMsg(type, msg) {
@@ -700,8 +864,40 @@ function setProgress(pct, label) {
   if (label) document.getElementById('progressLabel').textContent = label;
 }
 
+// 手动补填月份后，根据年月重新计算周末列
+function applyManualMonth() {
+  const year = parseInt(document.getElementById('inputYear').value);
+  const month = parseInt(document.getElementById('inputMonth').value);
+  if (!year || !month || month < 1 || month > 12) {
+    document.getElementById('monthPickerStatus').textContent = '请输入有效年月';
+    document.getElementById('monthPickerStatus').style.color = '#ff4d4f';
+    return;
+  }
+  // 从dateHeaders中提取每天的日子（MM-DD格式），用指定年月计算星期
+  satSunCols = [];
+  for (let i = 0; i < dateHeaders.length; i++) {
+    const h = String(dateHeaders[i]);
+    const m = h.match(/(\d{1,2})-(\d{1,2})/);
+    if (m) {
+      const day = parseInt(m[2]);
+      try {
+        const d = new Date(year, month - 1, day);
+        const dow = d.getDay(); // 0=周日, 6=周六
+        if (dow === 0 || dow === 6) satSunCols.push(i);
+      } catch(e) {}
+    }
+  }
+  if (satSunCols.length > 0) {
+    document.getElementById('monthPickerStatus').textContent = `已识别 ${satSunCols.length} 个周末列`;
+    document.getElementById('monthPickerStatus').style.color = '#52c41a';
+  } else {
+    document.getElementById('monthPickerStatus').textContent = '未能识别周末列，请检查日期格式';
+    document.getElementById('monthPickerStatus').style.color = '#ff4d4f';
+  }
+}
+
 function resetAll() {
-  rawWorkbook = null; employees = []; dateHeaders = []; satSunCols = []; empStats = []; processedResult = null;
+  rawWorkbook = null; employees = []; dateHeaders = []; satSunCols = []; empStats = []; processedResult = null; hasNextMonthCol = false;
   document.getElementById('fileInfo').classList.add('hidden');
   document.getElementById('progressArea').classList.add('hidden');
   document.getElementById('summaryCard').classList.add('hidden');
@@ -762,18 +958,13 @@ function processEmployee(emp) {
     '迟到1-10分':0,'迟到11-30分':0,'迟到31-59分':0,'迟到1小时以上':0,
     加班总时长:0, 备注:'',
     overtimeDaily:[], isWeekendDaily:[], lateDaily:[], latePunchDaily:[], missingDaily:[],
-    processedDays,     // 计算用（含跨天凌晨卡归入前一天）
-    rawDays: emp.days,  // 显示用（原始数据，不动）
+    processedDays,     // 计算用（含跨天凌晨卡归入前一天，可能含下月1号列）
+    rawDays: emp.days,  // 显示用（原始数据，可能含下月1号列）
   };
 
-  const lastIdx = processedDays.length - 1;
-  for (let dayIdx = 0; dayIdx < processedDays.length; dayIdx++) {
-    // 最后一列（下月1号）跳过
-    if (dayIdx === lastIdx) {
-      stats.overtimeDaily.push(0); stats.isWeekendDaily.push(false);
-      stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]);
-      continue;
-    }
+  // 只遍历 dateHeaders.length 天（不含下月1号）
+  const dayLimit = dateHeaders.length;
+  for (let dayIdx = 0; dayIdx < dayLimit; dayIdx++) {
     const timesStr = processedDays[dayIdx];
     if (!timesStr || timesStr.trim() === '' || timesStr.trim() === '-') {
       stats.overtimeDaily.push(0); stats.isWeekendDaily.push(false);
@@ -1015,7 +1206,7 @@ async function exportExcel() {
     '法定假日天数','调休天数','有薪天数','迟到次数','缺卡次数','0点','1点','2点','3点',
     '迟到1-10分','迟到11-30分','迟到31-59分','迟到1小时以上','加班总时长','备注','签名确认'];
 
-  const dayCount = dateHeaders.length; // 含下月1号
+  const dayCount = dateHeaders.length; // 不含下月1号
   const totalCols = 3 + dayCount + NEW_COLS.length;
 
   // ---- 列宽（对照Python版） ----
@@ -1031,7 +1222,7 @@ async function exportExcel() {
   // ---- 冻结窗格 ----
   ws.views = [{ state: 'frozen', ySplit: 1, xSplit: 3, topLeftCell: 'D2', activeCell: 'A1' }];
 
-  // ---- 样式定义（对照Python版） ----
+  // ---- 样式定义（对照Python版 make_attendance_D4_march.py） ----
   const thinBorder = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
@@ -1042,15 +1233,16 @@ async function exportExcel() {
 
   // 周末橙色（对照Python版 FFC000）
   const orangeFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFC000' } };
-  // 表头深灰（对照Python版 646A73）
+  // 表头灰色背景（对照Python版 646A73，从原始考勤表继承）
   const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF646A73' } };
-  // 全部宋体12号，不加粗（对照Python版）
+  // 表头字体：宋体12号白色（Python版从原始考勤表继承，不加粗）
   const headerFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FFFFFFFF' } };
-  const normalFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FF000000' } };
-  const redFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FFFF0000' } };
-  const redBoldFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FFFF0000' } };
-  const richTextBlackFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FF000000' } };
-  const richTextRedFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FFFF0000' } };
+  // 数据行字体：宋体12号（Python版 NORMAL_FONT = Font(size=12)，不指定name即默认宋体）
+  const normalFont = { name: '宋体', size: 12, color: { argb: 'FF000000' } };
+  const redFont = { name: '宋体', size: 12, color: { argb: 'FFFF0000' } };
+  const redBoldFont = { name: '宋体', size: 12, color: { argb: 'FFFF0000' } };
+  const richTextBlackFont = { name: '宋体', size: 12, color: { argb: 'FF000000' } };
+  const richTextRedFont = { name: '宋体', size: 12, color: { argb: 'FFFF0000' } };
 
   // ---- 第1行：表头 ----
   const headerRow = ws.getRow(1);
@@ -1083,8 +1275,8 @@ async function exportExcel() {
     rowA.getCell(2).value = st.id;
     rowA.getCell(3).value = st.dept;
 
-    // 每日打卡列（用原始数据 rawDays，不动）
-    for (let i = 0; i < st.rawDays.length; i++) {
+    // 每日打卡列（用原始数据 rawDays，只导出 dateHeaders.length 天，不含下月1号）
+    for (let i = 0; i < dateHeaders.length; i++) {
       const segments = buildCellText(st.rawDays[i] || '', st.missingDaily[i], st.latePunchDaily[i]);
       const cell = rowA.getCell(4 + i);
       // 用 rich text，全部宋体12号
@@ -1119,8 +1311,11 @@ async function exportExcel() {
     rowA.eachCell({ includeEmpty: true }, (cell, colNum) => {
       cell.border = thinBorder;
       cell.alignment = centerAlign;
-      if (!cell.font || !cell.font.name) {
-        cell.font = normalFont;
+      // richText cell 的字体由内部 segments 控制，不覆盖
+      if (!cell.value || typeof cell.value !== 'object' || !cell.value.richText) {
+        if (!cell.font || !cell.font.name || cell.font.name !== '宋体') {
+          cell.font = normalFont;
+        }
       }
     });
 
@@ -1149,10 +1344,9 @@ async function exportExcel() {
       return s;
     };
 
-    // 找出工作日和周末的列号（排除下月1号，即最后一个day列）
-    const actualDays = dayCount - 1; // 不含下月1号
+    // 找出工作日和周末的列号（dateHeaders已不含下月1号，所有列都参与统计）
     const weekdayCols = [], weekendCols = [];
-    for (let i = 0; i < actualDays; i++) {
+    for (let i = 0; i < dayCount; i++) {
       const cl = colLetter(4 + i);
       if (satSunCols.includes(i)) weekendCols.push(cl);
       else weekdayCols.push(cl);
@@ -1181,7 +1375,7 @@ async function exportExcel() {
     rowB.eachCell({ includeEmpty: true }, (cell, colNum) => {
       cell.border = thinBorder;
       cell.alignment = centerAlign;
-      if (!cell.font || !cell.font.name) {
+      if (!cell.font || !cell.font.name || cell.font.name !== '宋体') {
         cell.font = normalFont;
       }
     });
