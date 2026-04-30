@@ -599,6 +599,14 @@
         "ot_base": "17:30"
       },
       {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
         "start": "08:00",
         "end": "12:00",
         "net_h": 4,
@@ -1598,6 +1606,14 @@
         "net_h": 8,
         "day_val": 1,
         "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
         "break_min": 30
       },
       {
