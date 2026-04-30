@@ -1321,8 +1321,8 @@ async function exportExcel() {
     const rowB_Num = excelRow + 1;
 
     // === Row A: 打卡时间 ===
-    const rowA = ws.getRow(rowA_Num);
-    rowA.height = 100;
+  const rowA = ws.getRow(rowA_Num);
+  rowA.height = 130;
 
     // 前三列（rowA+B合并）
     rowA.getCell(1).value = st.name;
