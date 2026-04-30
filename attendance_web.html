@@ -219,14 +219,18 @@ function dedupTimes(times) {
   return res;
 }
 
-// 班次匹配（打分法）
+// 班次匹配（打分法 + 同分优先不迟到）
 function inferShiftFromDept(times, dept) {
   const shifts = getDeptShifts(dept);
   if (!shifts.length) return null;
   const normalTimes = times.filter(t => t.h >= 6);
   if (!normalTimes.length) return null;
 
-  let bestShift = null, bestScore = -999;
+  // 找第一张上班打卡时间（排除凌晨0-5点）
+  const firstPunch = normalTimes[0];
+  const firstPunchMin = timeToMin(firstPunch);
+
+  let bestShift = null, bestScore = -999, bestNotLate = false;
 
   for (const shift of shifts) {
     const sStart = parseShiftTime(shift.start);
@@ -262,7 +266,15 @@ function inferShiftFromDept(times, dept) {
         if (!hasMorning) score += 5; else score -= 5;
       }
     }
-    if (score > bestScore) { bestScore = score; bestShift = shift; }
+
+    // 判断这个班次是否"不迟到"：上班时间 <= 第一张打卡时间
+    const notLate = (sStart <= firstPunchMin);
+
+    if (score > bestScore || (score === bestScore && notLate && !bestNotLate)) {
+      bestScore = score;
+      bestShift = shift;
+      bestNotLate = notLate;
+    }
   }
   return bestScore >= 5 ? bestShift : null;
 }
