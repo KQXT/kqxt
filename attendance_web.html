@@ -370,7 +370,9 @@ function getShiftStartFromDept(times, dept) {
   const normal = times.filter(t => t.h >= 6);
   if (!normal.length) return {h:8, m:0};
   const first = normal[0];
-  if (first.h <= 7) return {h:8, m:0};
+  // 兜底逻辑：用实际打卡小时，不强行推后
+  // 6-7点打卡 → 7:00班；8点→8:00；9点→9:00；以此类推
+  if (first.h <= 7) return {h:7, m:0};
   if (first.h === 8) return {h:8, m:0};
   if (first.h === 9) return {h:9, m:0};
   if (first.h === 10) return {h:10, m:0};
@@ -552,11 +554,19 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
       // 没有noon_end也没有任何下午卡 → 可能是半天班（只有上午）
       // 用最后一张morning_start卡作为上午实际截止
       if (cls.morning_start.length) {
-        const lastMorn = cls.morning_start[cls.morning_start.length - 1]; // 已按时间排序
+        const lastMorn = cls.morning_start[cls.morning_start.length - 1];
         mornEndMin = Math.min(timeToMin(noonCutoff), timeToMin(lastMorn));
       }
     }
-    const mornMin = mornEndMin - timeToMin(morningStart);
+
+    // 起算点 = max(morningStart, 第一张上午卡)：迟到时段不算工时
+    let mornStartMin = timeToMin(morningStart);
+    if (cls.morning_start.length) {
+      const firstMornCardMin = timeToMin(cls.morning_start[0]);
+      mornStartMin = Math.max(mornStartMin, firstMornCardMin);
+    }
+
+    const mornMin = mornEndMin - mornStartMin;
     if (mornMin > 0) mornHours = mornMin / 60;
   }
 
@@ -1468,9 +1478,17 @@ async function exportExcel() {
     rowA.getCell(sumColStart + 2).value = '';
 
     // 后20列统计（RowA）
-    // 平时加班工时(sumColStart+4)和周末加班工时(sumColStart+6)留空，RowB用公式引用平时/周末列
+    // 平时加班工时和周末加班工时：RowA写公式引用平时/周末列，然后合并
+    const colLetter = (n) => {
+      let s = '';
+      let t = n;
+      while (t > 0) { t--; s = String.fromCharCode(65 + (t % 26)) + s; t = Math.floor(t / 26); }
+      return s;
+    };
+    const pingCol = colLetter(sumColStart);       // 平时列
+    const zhouCol = colLetter(sumColStart + 1); // 周末列
     const statRowA_Values = [
-      st.平时出勤天数, '', st.周末天数, '',
+      st.平时出勤天数, {formula:`=${pingCol}${rowA_Num}`}, st.周末天数, {formula:`=${zhouCol}${rowA_Num}`},
       st.法定假日天数, st.调休天数, st.有薪天数,
       st.迟到次数 || '', st.缺卡次数 || '',
       st['0点'] || '', st['1点'] || '', st['2点'] || '', st['3点'] || '',
@@ -1511,13 +1529,6 @@ async function exportExcel() {
       cell.alignment = centerAlign;
     }
 
-    // 平时/周末/共计 = 公式
-    const colLetter = (n) => {
-      let s = '';
-      while (n > 0) { n--; s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26); }
-      return s;
-    };
-
     // 找出工作日和周末的列号（dateHeaders已不含下月1号，所有列都参与统计）
     const weekdayCols = [], weekendCols = [];
     for (let i = 0; i < dayCount; i++) {
@@ -1540,19 +1551,10 @@ async function exportExcel() {
     rowB.getCell(sumColStart + 2).value = { formula: `=${pingCol}${rowB_Num}+${zhouCol}${rowB_Num}` };
     rowB.getCell(sumColStart + 2).font = redBoldFont;
 
-    // 后20列留空
+    // 后20列留空（平时加班工时和周末加班工时的公式已写在RowA，合并后显示RowA的值）
     for (let i = 0; i < 20; i++) {
       rowB.getCell(sumColStart + 3 + i).value = '';
     }
-
-    // 平时加班工时 = 引用平时列，周末加班工时 = 引用周末列
-    // 这样HR手动修改平时/周末数据后，加班工时自动更新
-    const ping加班Col = colLetter(sumColStart + 4); // 平时加班工时列
-    const zhou加班Col = colLetter(sumColStart + 6); // 周末加班工时列
-    rowB.getCell(sumColStart + 4).value = { formula: `=${pingCol}${rowB_Num}` };
-    rowB.getCell(sumColStart + 4).font = redBoldFont;
-    rowB.getCell(sumColStart + 6).value = { formula: `=${zhouCol}${rowB_Num}` };
-    rowB.getCell(sumColStart + 6).font = redBoldFont;
 
     // RowB 样式
     rowB.eachCell({ includeEmpty: true }, (cell, colNum) => {
@@ -1574,10 +1576,8 @@ async function exportExcel() {
       ws.mergeCells(rowA_Num, col, rowB_Num, col);
     }
 
-    // === RowA 统计列合并（平时加班工时和周末加班工时不合并，RowB有公式） ===
+    // === RowA 统计列合并（全部合并，公式写在RowA上） ===
     for (let i = 0; i < statRowA_Values.length; i++) {
-      // 索引1(平时加班工时)和索引3(周末加班工时)不合并
-      if (i === 1 || i === 3) continue;
       ws.mergeCells(rowA_Num, sumColStart + 3 + i, rowB_Num, sumColStart + 3 + i);
     }
 
