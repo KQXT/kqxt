@@ -487,22 +487,40 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
   const hasMorningCard = times.some(t=>t.h>=midCutoff && t.h<12);
   const hasAfternoonCard = times.some(t=>t.h>=13);
 
-  // 只有下午/晚上（无上午卡）
+  // 只有下午/晚上（无上午卡）→ 用班次推断计算
   if (hasAfternoonCard && !hasMorningCard) {
     const nc = times.filter(t=>t.h>=6).sort((a,b)=>timeToMin(a)-timeToMin(b));
     if (!nc.length) return {morning:0, afternoon:0, night:0, total:0};
     const firstMin = timeToMin(nc[0]);
     let lastMin = timeToMin(nc[nc.length-1]);
     if (midnightCards.length) lastMin = 24*60 + timeToMin(midnightCards[midnightCards.length-1]);
-    let totalH;
-    if (firstMin < 14*60+30) {
-      if (lastMin <= 17*60+30) {
-        totalH = (lastMin - 13*60 - 30) / 60;
+
+    // 用班次推断来计算工时
+    const matchedShift = inferShiftFromDept(times, dept);
+    let totalH = 0;
+
+    if (matchedShift) {
+      const sStart = parseShiftTime(matchedShift.start);
+      const netH = matchedShift.net_h || 8;
+
+      if (netH <= 5) {
+        // 半天班：工时 = 第一张卡到班次下班时间（net_h小时）
+        // 但不超过实际打卡时间跨度
+        const sEnd = parseShiftTime(matchedShift.end);
+        let endMin = sEnd <= 30 ? sEnd + 24*60 : sEnd; // 跨天处理
+        if (endMin <= sStart) endMin += 24*60; // 防止endMin < sStart
+        totalH = Math.min(netH, (lastMin - firstMin) / 60);
+        if (totalH < 0) totalH = 0;
       } else {
-        totalH = (17*60+30 - 13*60-30)/60 + Math.max(0,(lastMin-18*60)/60);
+        // 全天班：工时 = min(实际跨度, 班次净工时)
+        const elapsed = (lastMin - firstMin) / 60;
+        totalH = Math.min(netH, elapsed);
+        if (totalH < 0) totalH = 0;
       }
     } else {
-      totalH = Math.max(0, (lastMin - 15*60)/60 - 0.5);
+      // 无班次匹配兜底：按实际打卡跨度计算
+      totalH = (lastMin - firstMin) / 60;
+      if (totalH < 0) totalH = 0;
     }
     return {morning:0, afternoon:totalH, night:0, total:totalH};
   }
@@ -526,7 +544,19 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
   // 上午工时
   if (morningStart) {
     const noonCutoff = dept.includes('保安') ? {h:11,m:50} : {h:12,m:0};
-    const mornMin = timeToMin(noonCutoff) - timeToMin(morningStart);
+    let mornEndMin = timeToMin(noonCutoff); // 默认算到12:00
+
+    // 如果有下午卡（afternoon_start/end或overtime），说明全天班，上午到12:00
+    const hasAnyAfternoon = cls.afternoon_start.length || cls.afternoon_end.length || cls.overtime_start.length || cls.overtime_end.length;
+    if (!cls.noon_end.length && !hasAnyAfternoon) {
+      // 没有noon_end也没有任何下午卡 → 可能是半天班（只有上午）
+      // 用最后一张morning_start卡作为上午实际截止
+      if (cls.morning_start.length) {
+        const lastMorn = cls.morning_start[cls.morning_start.length - 1]; // 已按时间排序
+        mornEndMin = Math.min(timeToMin(noonCutoff), timeToMin(lastMorn));
+      }
+    }
+    const mornMin = mornEndMin - timeToMin(morningStart);
     if (mornMin > 0) mornHours = mornMin / 60;
   }
 
@@ -615,10 +645,10 @@ function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
     overtimeHours = Math.floor(remainOt * 2) * 0.5;
   }
 
-  // 半天标记：出勤0.5天且没有noon_end卡(12:00-12:29)时标记半天
-  // 有noon_end卡说明上午来过（只是没打上午上班卡），不是半天休息
-  const hasNoonEnd = times.some(t => t.h === 12 && t.m < 30);
-  const halfDay = (attendanceDays === 0.5 && !hasNoonEnd);
+  // 半天标记：出勤0.5天时标记半天
+  // 排除有下午上班卡的case（有afternoon_start说明是全天上班但工时不够半天的不算）
+  const hasAfStart = times.some(t => t.h >= 13 && t.h < 17);
+  const halfDay = (attendanceDays === 0.5 && !hasAfStart);
 
   return {attendanceDays, paidDays, overtimeHours, halfDay};
 }
@@ -1131,8 +1161,8 @@ function processEmployee(emp) {
     stats.overtimeDaily.push(overtimeHours);
     stats.halfDayDaily.push(halfDay);
 
-    // 0-3点统计
-    if (!isNoOt && times.length) {
+    // 0-3点统计（所有人包括保安/卫生组）
+    if (times.length) {
       const last = times[times.length-1];
       if (last.h < 6) {
         if (last.h===0) stats['0点']++; else if (last.h===1) stats['1点']++;
@@ -1544,8 +1574,10 @@ async function exportExcel() {
       ws.mergeCells(rowA_Num, col, rowB_Num, col);
     }
 
-    // === RowA 统计列也合并 ===
+    // === RowA 统计列合并（平时加班工时和周末加班工时不合并，RowB有公式） ===
     for (let i = 0; i < statRowA_Values.length; i++) {
+      // 索引1(平时加班工时)和索引3(周末加班工时)不合并
+      if (i === 1 || i === 3) continue;
       ws.mergeCells(rowA_Num, sumColStart + 3 + i, rowB_Num, sumColStart + 3 + i);
     }
 
