@@ -1102,27 +1102,16 @@ function processEmployee(emp) {
         }
       }
     } else if (normalTimes.length) {
-      // 迟到判断使用部门最早start时间作为基准（不依赖具体班次匹配）
-      // 这样即使班次表未覆盖新班次，只要打卡时间不早于现有最早start，就不会误判迟到
-      const earliestStartMin = getDeptEarliestStart(dept);
-      if (earliestStartMin !== null) {
-        const first = normalTimes.reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
-        const firstMin = timeToMin(first);
-        // 迟到只看上午的卡（下午上班卡不算迟到）
-        if (first.h < 12 && firstMin > earliestStartMin) {
+      // 迟到判断：用班次匹配推断出的上班时间作为基准
+      // 班次匹配用四条件法（能上满→最接近→优先不迟到→卡型吻合），比部门最早start更精准
+      // 上7:58匹配到8:00班 → 不迟到；上7:48匹配到8:00班 → 不迟到
+      const hasMorn = normalTimes.some(t=>t.h<12);
+      if (hasMorn) {
+        const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+        const shiftStart = getShiftStartFromDept(times, dept);
+        if (timeToMin(first) > timeToMin(shiftStart)) {
           late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
-          lateMin = firstMin - earliestStartMin;
-        }
-      } else {
-        // 无班次配置，回退兜底逻辑
-        const hasMorn = normalTimes.some(t=>t.h<12);
-        if (hasMorn) {
-          const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
-          const shiftStart = getShiftStartFromDept(times, dept);
-          if (timeToMin(first) > timeToMin(shiftStart)) {
-            late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
-            lateMin = timeToMin(first) - timeToMin(shiftStart);
-          }
+          lateMin = timeToMin(first) - timeToMin(shiftStart);
         }
       }
     }
