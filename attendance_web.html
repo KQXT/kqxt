@@ -834,28 +834,32 @@ let hasNextMonthCol = false;  // 是否有下月1号列（凌晨卡跨天用）
 // ============================================================
 // UI 事件
 // ============================================================
-const uploadArea = document.getElementById('uploadArea');
-const fileInput = document.getElementById('fileInput');
+let uploadArea, fileInput;
+document.addEventListener('DOMContentLoaded', () => {
+  uploadArea = document.getElementById('uploadArea');
+  fileInput = document.getElementById('fileInput');
+  if (!uploadArea) { console.error('uploadArea not found'); return; }
 
-uploadArea.addEventListener('click', () => fileInput.click());
+  uploadArea.addEventListener('click', () => fileInput.click());
 
-// 全局 + uploadArea 都阻止默认拖拽行为
-function preventDrag(e) { e.preventDefault(); e.stopPropagation(); }
-['dragenter','dragover','dragleave','drop'].forEach(name => {
-  document.addEventListener(name, preventDrag);
-  uploadArea.addEventListener(name, preventDrag);
+  // 全局 + uploadArea 都阻止默认拖拽行为
+  function preventDrag(e) { e.preventDefault(); e.stopPropagation(); }
+  ['dragenter','dragover','dragleave','drop'].forEach(name => {
+    document.addEventListener(name, preventDrag);
+    uploadArea.addEventListener(name, preventDrag);
+  });
+  uploadArea.addEventListener('dragenter', () => uploadArea.classList.add('drag-over'));
+  uploadArea.addEventListener('dragover', () => uploadArea.classList.add('drag-over'));
+  uploadArea.addEventListener('dragleave', e => {
+    if (!e.relatedTarget || !uploadArea.contains(e.relatedTarget)) uploadArea.classList.remove('drag-over');
+  });
+  uploadArea.addEventListener('drop', e => {
+    uploadArea.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 });
-uploadArea.addEventListener('dragenter', () => uploadArea.classList.add('drag-over'));
-uploadArea.addEventListener('dragover', () => uploadArea.classList.add('drag-over'));
-uploadArea.addEventListener('dragleave', e => {
-  if (!e.relatedTarget || !uploadArea.contains(e.relatedTarget)) uploadArea.classList.remove('drag-over');
-});
-uploadArea.addEventListener('drop', e => {
-  uploadArea.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f) handleFile(f);
-});
-fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
 function fixSheetRef(wb) {
   // 修复得力导出的xlsx文件dimension错误（如4月文件!ref=A1:AI2，实际数据有570行）
