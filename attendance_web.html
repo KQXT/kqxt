@@ -1438,8 +1438,9 @@ async function exportExcel() {
     rowA.getCell(sumColStart + 2).value = '';
 
     // 后20列统计（RowA）
+    // 平时加班工时(sumColStart+4)和周末加班工时(sumColStart+6)留空，RowB用公式引用平时/周末列
     const statRowA_Values = [
-      st.平时出勤天数, st.平时加班工时, st.周末天数, st.周末加班工时,
+      st.平时出勤天数, '', st.周末天数, '',
       st.法定假日天数, st.调休天数, st.有薪天数,
       st.迟到次数 || '', st.缺卡次数 || '',
       st['0点'] || '', st['1点'] || '', st['2点'] || '', st['3点'] || '',
@@ -1513,6 +1514,15 @@ async function exportExcel() {
     for (let i = 0; i < 20; i++) {
       rowB.getCell(sumColStart + 3 + i).value = '';
     }
+
+    // 平时加班工时 = 引用平时列，周末加班工时 = 引用周末列
+    // 这样HR手动修改平时/周末数据后，加班工时自动更新
+    const ping加班Col = colLetter(sumColStart + 4); // 平时加班工时列
+    const zhou加班Col = colLetter(sumColStart + 6); // 周末加班工时列
+    rowB.getCell(sumColStart + 4).value = { formula: `=${pingCol}${rowB_Num}` };
+    rowB.getCell(sumColStart + 4).font = redBoldFont;
+    rowB.getCell(sumColStart + 6).value = { formula: `=${zhouCol}${rowB_Num}` };
+    rowB.getCell(sumColStart + 6).font = redBoldFont;
 
     // RowB 样式
     rowB.eachCell({ includeEmpty: true }, (cell, colNum) => {
