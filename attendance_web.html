@@ -838,10 +838,20 @@ const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
 
 uploadArea.addEventListener('click', () => fileInput.click());
-uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
-uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+
+// 全局 + uploadArea 都阻止默认拖拽行为
+function preventDrag(e) { e.preventDefault(); e.stopPropagation(); }
+['dragenter','dragover','dragleave','drop'].forEach(name => {
+  document.addEventListener(name, preventDrag);
+  uploadArea.addEventListener(name, preventDrag);
+});
+uploadArea.addEventListener('dragenter', () => uploadArea.classList.add('drag-over'));
+uploadArea.addEventListener('dragover', () => uploadArea.classList.add('drag-over'));
+uploadArea.addEventListener('dragleave', e => {
+  if (!e.relatedTarget || !uploadArea.contains(e.relatedTarget)) uploadArea.classList.remove('drag-over');
+});
 uploadArea.addEventListener('drop', e => {
-  e.preventDefault(); uploadArea.classList.remove('drag-over');
+  uploadArea.classList.remove('drag-over');
   const f = e.dataTransfer.files[0];
   if (f) handleFile(f);
 });
