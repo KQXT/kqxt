@@ -219,12 +219,13 @@ function dedupTimes(times) {
   return res;
 }
 
-// 班次匹配（两层筛选：打分法 + 工时满足度优先不迟到）
+// 班次匹配（四条件匹配法：能上满 + 最接近 + 优先不迟到 + 卡型吻合）
 function inferShiftFromDept(times, dept) {
-  // 三条件匹配（按优先级）：
+  // 四条件匹配（按优先级）：
   // 1. 能上满：最后一张打卡 >= 班次正常下班时间（允许合理提前5分钟）
   // 2. 最接近：第一张上班打卡离哪个班次start最近
   // 3. 同距离时优先不迟到：距离相等的班次中，优先选第一张打卡 <= 班次start的
+  // 4. 同距离+同迟到时，优先卡型吻合的班次
   const shifts = getDeptShifts(dept);
   if (!shifts.length) return null;
   const normalTimes = times.filter(t => t.h >= 6);
@@ -292,7 +293,67 @@ function inferShiftFromDept(times, dept) {
 
   // 距离相同时，优先选不迟到的（第一张打卡 <= 班次start）
   const notLate = sameDist.filter(s => firstPunchMin <= parseShiftTime(s.start));
-  return notLate.length ? notLate[0] : sameDist[0];
+  if (notLate.length === 1) return notLate[0];
+  const pool3 = notLate.length ? notLate : sameDist;
+  if (pool3.length === 1) return pool3[0];
+
+  // ── 条件4：卡型吻合度 ──
+  // 根据实际打卡分布与班次预期卡型的匹配程度打分
+  const cls = classifyPunchTimes(times);
+  const hasMornCard = cls.morning_start.length > 0;
+  const hasNoonCard = cls.noon_end.length > 0;
+  const hasAftStart = cls.afternoon_start.length > 0;
+  const hasAftEnd = cls.afternoon_end.length > 0;
+  const hasOtEnd = cls.overtime_end.length > 0;
+
+  const scored = pool3.map(s => {
+    const sStart = parseShiftTime(s.start);
+    const sEnd = parseShiftTime(s.end);
+    const netH = s.net_h || 8;
+    let score = 0;
+
+    if (sStart >= 13 * 60 && netH < 5) {
+      // 下午半天班（13:30-17:30等）：期望有afternoon卡，没有morning卡
+      if (hasAftStart) score += 3;
+      if (!hasMornCard) score += 2;
+      if (hasAftEnd) score += 1;
+    } else if (sEnd <= 12 * 60 + 5 && netH <= 5) {
+      // 上午半天班（8:00-12:00等）：期望有morning+noon卡，没有afternoon卡
+      if (hasMornCard) score += 3;
+      if (hasNoonCard) score += 2;
+      if (!hasAftStart) score += 1;
+    } else if (sStart >= 13 * 60 && netH >= 8) {
+      // 下午全天班（13:30-22:00等）：期望有afternoon+overtime卡，没有morning卡
+      if (hasAftStart) score += 3;
+      if (hasOtEnd) score += 2;
+      if (!hasMornCard) score += 2;
+    } else {
+      // 普通全天班（8:00-17:30、9:00-19:00等）：期望有morning卡
+      if (hasMornCard) score += 3;
+      if (hasNoonCard) score += 1;
+    }
+
+    return { shift: s, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0].shift;
+}
+
+// 获取部门所有班次中最早的上班时间（用于迟到判断基准）
+// 返回分钟数，无班次时返回null
+function getDeptEarliestStart(dept) {
+  const shifts = getDeptShifts(dept);
+  if (!shifts.length) return null;
+  let earliest = null;
+  for (const s of shifts) {
+    const m = parseShiftTime(s.start);
+    if (m === null) continue;
+    // 跳过半天班中的下午半天（start>=13:30），它们不影响上午迟到判断
+    if (m >= 13 * 60 && (s.net_h || 8) < 5) continue;
+    if (earliest === null || m < earliest) earliest = m;
+  }
+  return earliest;
 }
 
 function getShiftStartFromDept(times, dept) {
@@ -1041,16 +1102,19 @@ function processEmployee(emp) {
         }
       }
     } else if (normalTimes.length) {
-      const shift = inferShiftFromDept(times, dept);
-      if (shift) {
-        const [sh, sm] = shift.start.split(':').map(Number);
-        const shiftMin = sh*60+sm;
+      // 迟到判断使用部门最早start时间作为基准（不依赖具体班次匹配）
+      // 这样即使班次表未覆盖新班次，只要打卡时间不早于现有最早start，就不会误判迟到
+      const earliestStartMin = getDeptEarliestStart(dept);
+      if (earliestStartMin !== null) {
         const first = normalTimes.reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
-        if (timeToMin(first) > shiftMin) {
+        const firstMin = timeToMin(first);
+        // 迟到只看上午的卡（下午上班卡不算迟到）
+        if (first.h < 12 && firstMin > earliestStartMin) {
           late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
-          lateMin = timeToMin(first) - shiftMin;
+          lateMin = firstMin - earliestStartMin;
         }
       } else {
+        // 无班次配置，回退兜底逻辑
         const hasMorn = normalTimes.some(t=>t.h<12);
         if (hasMorn) {
           const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
