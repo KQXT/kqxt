@@ -155,6 +155,21 @@ async function loadConfig() {
 }
 
 // ============================================================
+// 通用班次模板（用于部门无配置或班次不全时的自动推断）
+// ============================================================
+const UNIVERSAL_SHIFTS = [
+  {start:'07:00', end:'16:30', net_h:8},
+  {start:'07:30', end:'17:00', net_h:8},
+  {start:'08:00', end:'17:30', net_h:8},
+  {start:'09:00', end:'19:00', net_h:8},
+  {start:'10:00', end:'20:00', net_h:8},
+  {start:'13:30', end:'22:00', net_h:8},
+  {start:'15:00', end:'23:30', net_h:8},
+  {start:'08:00', end:'12:00', net_h:4},
+  {start:'13:30', end:'17:30', net_h:4},
+];
+
+// ============================================================
 // 工具函数
 // ============================================================
 function parseShiftTime(s) {
@@ -220,14 +235,16 @@ function dedupTimes(times) {
 }
 
 // 班次匹配（四条件匹配法：能上满 + 最接近 + 优先不迟到 + 卡型吻合）
-function inferShiftFromDept(times, dept) {
+// useUniversal=true 时用通用班次模板（用于部门无配置或班次不全时）
+function inferShiftFromDept(times, dept, useUniversal) {
   // 四条件匹配（按优先级）：
   // 1. 能上满：最后一张打卡 >= 班次正常下班时间（允许合理提前5分钟）
   // 2. 最接近：第一张上班打卡离哪个班次start最近
   // 3. 同距离时优先不迟到：距离相等的班次中，优先选第一张打卡 <= 班次start的
   // 4. 同距离+同迟到时，优先卡型吻合的班次
-  const shifts = getDeptShifts(dept);
-  if (!shifts.length) return null;
+  let shifts = getDeptShifts(dept);
+  // 部门无配置或强制使用通用模板时，用 UNIVERSAL_SHIFTS
+  if (!shifts.length || useUniversal) shifts = UNIVERSAL_SHIFTS;
   const normalTimes = times.filter(t => t.h >= 6);
   if (!normalTimes.length) return null;
 
@@ -356,22 +373,51 @@ function getDeptEarliestStart(dept) {
   return earliest;
 }
 
+// 统一的最佳班次推断函数
+// 返回完整的班次对象 {start, end, net_h, break_min, ...} 或 null
+// 优先用部门配置，匹配不合理时自动用通用模板兜底
+function getBestShift(times, dept) {
+  const normal = times.filter(t => t.h >= 6);
+  if (!normal.length) return null;
+  const firstPunchMin = timeToMin(normal[0]);
+
+  // 1. 优先用部门配置匹配
+  const shift = inferShiftFromDept(times, dept);
+  if (shift) {
+    const shiftStartMin = parseShiftTime(shift.start);
+    const dist = Math.abs(firstPunchMin - shiftStartMin);
+    // 距离<=30分钟认为匹配合理，直接用部门配置
+    if (dist <= 30) return shift;
+    // 距离太远，说明部门班次不全，尝试通用模板
+    const uShift = inferShiftFromDept(times, dept, true);
+    if (uShift) {
+      const uDist = Math.abs(firstPunchMin - parseShiftTime(uShift.start));
+      // 通用模板更近才替换，否则保留部门配置
+      if (uDist < dist) return uShift;
+    }
+    return shift;
+  }
+
+  // 2. 部门无配置，用通用模板
+  const uShift = inferShiftFromDept(times, dept, true);
+  return uShift || null;
+}
+
 function getShiftStartFromDept(times, dept) {
   if (dept.includes('保安') || dept.includes('卫生')) {
     const normal = times.filter(t => t.h >= 6);
     if (normal.length && normal.some(t => t.h < 12)) return {h:6, m:30};
     return {h:16, m:0};
   }
-  const shift = inferShiftFromDept(times, dept);
-  if (shift) {
-    const [h, m] = shift.start.split(':').map(Number);
+  const best = getBestShift(times, dept);
+  if (best) {
+    const [h, m] = best.start.split(':').map(Number);
     return {h, m};
   }
   const normal = times.filter(t => t.h >= 6);
   if (!normal.length) return {h:8, m:0};
+  // 最终兜底：按第一张打卡小时推断（整点）
   const first = normal[0];
-  // 兜底逻辑：用实际打卡小时，不强行推后
-  // 6-7点打卡 → 7:00班；8点→8:00；9点→9:00；以此类推
   if (first.h <= 7) return {h:7, m:0};
   if (first.h === 8) return {h:8, m:0};
   if (first.h === 9) return {h:9, m:0};
@@ -498,7 +544,7 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
     if (midnightCards.length) lastMin = 24*60 + timeToMin(midnightCards[midnightCards.length-1]);
 
     // 用班次推断来计算工时
-    const matchedShift = inferShiftFromDept(times, dept);
+    const matchedShift = getBestShift(times, dept);
     let totalH = 0;
 
     if (matchedShift) {
@@ -538,9 +584,25 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
   let matchedShift = null;
   if (cls.morning_start.length) {
     morningStart = getShiftStartFromDept(times, dept);
-    matchedShift = inferShiftFromDept(times, dept);
+    matchedShift = getBestShift(times, dept);
   } else if (cls.noon_end.length && dayIdx !== undefined && processedDays) {
     morningStart = inferMissingMorningStart(dayIdx, processedDays, dept);
+  }
+  // 缺上午上班卡但有noon_end：用noon_end反推（默认上午工作4h）
+  // 有noon_end说明上午来了，只是没打卡，不应算成半天
+  if (!morningStart && cls.noon_end.length) {
+    const best = getBestShift(times, dept);
+    if (best) {
+      const [h, m] = best.start.split(':').map(Number);
+      morningStart = {h, m};
+      matchedShift = best;
+    } else {
+      // 无班次匹配，用noon_end反推4h
+      const noonEnd = cls.noon_end[0];
+      let inferredMin = timeToMin(noonEnd) - 4 * 60;
+      if (inferredMin < 6 * 60) inferredMin = 7 * 60; // 不早于7:00
+      morningStart = {h: Math.floor(inferredMin / 60), m: inferredMin % 60};
+    }
   }
 
   // 上午工时
@@ -576,8 +638,12 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
     const afStart = {h:13, m:30};
     let normalEndTime = {h:17, m:30};
     if (morningStart) {
-      if (morningStart.h === 9) normalEndTime = {h:19, m:0};
+      if (morningStart.h === 7 && morningStart.m === 0) normalEndTime = {h:16, m:30};
+      else if (morningStart.h === 7 && morningStart.m === 30) normalEndTime = {h:17, m:0};
+      else if (morningStart.h === 9) normalEndTime = {h:19, m:0};
       else if (morningStart.h === 10) normalEndTime = {h:20, m:0};
+      else if (morningStart.h === 13) normalEndTime = {h:22, m:0};
+      else if (morningStart.h === 15) normalEndTime = {h:23, m:30};
     }
     const hasOT = cls.overtime_end.length > 0;
     let afEnd;
