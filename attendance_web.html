@@ -1626,8 +1626,6 @@ async function exportExcel() {
     rowB.getCell(sumColStart + 1).value = weekendSum ? { formula: `SUM(${weekendSum})` } : 0;
     rowB.getCell(sumColStart + 1).font = redBoldFont;
 
-    const pingCol = colLetter(sumColStart);
-    const zhouCol = colLetter(sumColStart + 1);
     rowB.getCell(sumColStart + 2).value = { formula: `=${pingCol}${rowB_Num}+${zhouCol}${rowB_Num}` };
     rowB.getCell(sumColStart + 2).font = redBoldFont;
 
