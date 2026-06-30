@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>考勤记录处理工具</title>
+<title>鑰冨嫟璁板綍澶勭悊宸ュ叿</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -59,48 +59,48 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <body>
 <div class="header">
   <div>
-    <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.0 · 支持66个部门 · 自动班次匹配</div>
+    <h1>馃搳 鑰冨嫟璁板綍澶勭悊宸ュ叿</h1>
+    <div class="version">v3.1 路 鍑哄嫟鎸夋墦鍗″瓨鍦ㄦ€?路 杩熷埌鍗曠嫭缁熻</div>
   </div>
 </div>
 
 <div class="container">
-  <!-- 上传区 -->
+  <!-- 涓婁紶鍖?-->
   <div class="card">
-    <div class="card-header">📂 上传原始考勤文件（得力系统导出）</div>
+    <div class="card-header">馃搨 涓婁紶鍘熷鑰冨嫟鏂囦欢锛堝緱鍔涚郴缁熷鍑猴級</div>
     <div class="card-body">
       <div class="upload-area" id="uploadArea">
-        <div class="icon">📄</div>
-        <p>点击选择或拖拽 Excel 文件到此处</p>
-        <p class="hint">支持 .xlsx 格式（得力系统导出的原始考勤表）</p>
+        <div class="icon">馃搫</div>
+        <p>鐐瑰嚮閫夋嫨鎴栨嫋鎷?Excel 鏂囦欢鍒版澶?/p>
+        <p class="hint">鏀寔 .xlsx 鏍煎紡锛堝緱鍔涚郴缁熷鍑虹殑鍘熷鑰冨嫟琛級</p>
       </div>
       <input type="file" id="fileInput" accept=".xlsx,.xls">
       <div id="fileInfo" class="hidden" style="margin-top:12px; padding:10px; background:#f6ffed; border-radius:6px; color:#52c41a; font-size:13px;"></div>
-      <!-- 当文件缺少日期表头时，显示月份补填框 -->
+      <!-- 褰撴枃浠剁己灏戞棩鏈熻〃澶存椂锛屾樉绀烘湀浠借ˉ濉 -->
       <div id="monthPickerBox" class="hidden" style="margin-top:10px; padding:10px; background:#fffbe6; border:1px solid #ffe58f; border-radius:6px; font-size:13px;">
-        ⚠️ 未检测到日期表头（周六/周日标识），请补填考勤月份以正确标识周末：
-        <input type="number" id="inputYear" min="2020" max="2099" placeholder="年份" style="width:70px; margin:0 4px; padding:3px 6px; border:1px solid #d9d9d9; border-radius:4px;">
-        年
-        <input type="number" id="inputMonth" min="1" max="12" placeholder="月" style="width:50px; margin:0 4px; padding:3px 6px; border:1px solid #d9d9d9; border-radius:4px;">
-        月
-        <button onclick="applyManualMonth()" style="margin-left:8px; padding:3px 12px; background:#1890ff; color:#fff; border:none; border-radius:4px; cursor:pointer;">确认</button>
+        鈿狅笍 鏈娴嬪埌鏃ユ湡琛ㄥご锛堝懆鍏?鍛ㄦ棩鏍囪瘑锛夛紝璇疯ˉ濉€冨嫟鏈堜唤浠ユ纭爣璇嗗懆鏈細
+        <input type="number" id="inputYear" min="2020" max="2099" placeholder="骞翠唤" style="width:70px; margin:0 4px; padding:3px 6px; border:1px solid #d9d9d9; border-radius:4px;">
+        骞?
+        <input type="number" id="inputMonth" min="1" max="12" placeholder="鏈? style="width:50px; margin:0 4px; padding:3px 6px; border:1px solid #d9d9d9; border-radius:4px;">
+        鏈?
+        <button onclick="applyManualMonth()" style="margin-left:8px; padding:3px 12px; background:#1890ff; color:#fff; border:none; border-radius:4px; cursor:pointer;">纭</button>
         <span id="monthPickerStatus" style="margin-left:8px; color:#52c41a;"></span>
       </div>
     </div>
   </div>
 
-  <!-- 操作区 -->
+  <!-- 鎿嶄綔鍖?-->
   <div class="card">
-    <div class="card-header">⚙️ 操作</div>
+    <div class="card-header">鈿欙笍 鎿嶄綔</div>
     <div class="card-body">
       <div class="actions">
-        <button class="btn btn-primary" id="btnProcess" disabled onclick="startProcess()">▶ 开始处理</button>
-        <button class="btn btn-success" id="btnExport" disabled onclick="exportExcel()">⬇ 导出Excel</button>
-        <button class="btn btn-default" onclick="resetAll()">🔄 重置</button>
+        <button class="btn btn-primary" id="btnProcess" disabled onclick="startProcess()">鈻?寮€濮嬪鐞?/button>
+        <button class="btn btn-success" id="btnExport" disabled onclick="exportExcel()">猬?瀵煎嚭Excel</button>
+        <button class="btn btn-default" onclick="resetAll()">馃攧 閲嶇疆</button>
       </div>
       <div id="progressArea" class="hidden" style="margin-top:16px;">
         <div style="display:flex; justify-content:space-between; font-size:12px; color:#666; margin-bottom:6px;">
-          <span id="progressLabel">处理中...</span>
+          <span id="progressLabel">澶勭悊涓?..</span>
           <span id="progressPct">0%</span>
         </div>
         <div class="progress-bar"><div class="fill" id="progressFill" style="width:0"></div></div>
@@ -109,19 +109,19 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
     </div>
   </div>
 
-  <!-- 统计摘要 -->
+  <!-- 缁熻鎽樿 -->
   <div class="card hidden" id="summaryCard">
-    <div class="card-header">📈 处理结果摘要</div>
+    <div class="card-header">馃搱 澶勭悊缁撴灉鎽樿</div>
     <div class="card-body">
       <div class="stats-grid" id="statsGrid"></div>
     </div>
   </div>
 
-  <!-- 预览表格 -->
+  <!-- 棰勮琛ㄦ牸 -->
   <div class="card hidden" id="previewCard">
     <div class="card-header">
-      👁 数据预览（前20行）
-      <span class="tag tag-blue" style="margin-left:auto; font-size:11px;">橙色=周末 | 红色=迟到/缺卡/加班</span>
+      馃憗 鏁版嵁棰勮锛堝墠20琛岋級
+      <span class="tag tag-blue" style="margin-left:auto; font-size:11px;">姗欒壊=鍛ㄦ湯 | 绾㈣壊=杩熷埌/缂哄崱/鍔犵彮</span>
     </div>
     <div class="card-body">
       <div class="table-wrap" id="previewTable"></div>
@@ -131,33 +131,34 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 
 <script>
 // ============================================================
-// 部门班次配置 — 从 config.json 动态加载
+// 閮ㄩ棬鐝閰嶇疆 鈥?浠?config.json 鍔ㄦ€佸姞杞?
 // ============================================================
 let ALIAS_MAP = {};
 let DEPT_SHIFTS = {};
 
-// 获取当前HTML所在路径，自动加载同目录下的config.json
+// 鑾峰彇褰撳墠HTML鎵€鍦ㄨ矾寰勶紝鑷姩鍔犺浇鍚岀洰褰曚笅鐨刢onfig.json
 const CONFIG_URL = (document.currentScript?.src || location.href).replace(/[^/]*$/, '') + 'config.json';
 
 async function loadConfig() {
   try {
     const resp = await fetch(CONFIG_URL);
-    if (!resp.ok) throw new Error('config.json 加载失败: ' + resp.status);
+    if (!resp.ok) throw new Error('config.json 鍔犺浇澶辫触: ' + resp.status);
     const config = await resp.json();
     ALIAS_MAP = config.ALIAS_MAP || {};
     DEPT_SHIFTS = config.DEPT_SHIFTS || {};
-    logMsg('ok', '班次配置已加载，共 ' + Object.keys(DEPT_SHIFTS).length + ' 个部门');
+    logMsg('ok', '鐝閰嶇疆宸插姞杞斤紝鍏?' + Object.keys(DEPT_SHIFTS).length + ' 涓儴闂?);
     return true;
   } catch (e) {
-    logMsg('err', '加载config.json失败: ' + e.message);
+    logMsg('err', '鍔犺浇config.json澶辫触: ' + e.message);
     return false;
   }
 }
 
 // ============================================================
-// 通用班次模板（用于部门无配置或班次不全时的自动推断）
+// 閫氱敤鐝妯℃澘锛堢敤浜庨儴闂ㄦ棤閰嶇疆鎴栫彮娆′笉鍏ㄦ椂鐨勮嚜鍔ㄦ帹鏂級
 // ============================================================
 const UNIVERSAL_SHIFTS = [
+  {start:'06:30', end:'16:00', net_h:8},
   {start:'07:00', end:'16:30', net_h:8},
   {start:'07:30', end:'17:00', net_h:8},
   {start:'08:00', end:'17:30', net_h:8},
@@ -165,12 +166,13 @@ const UNIVERSAL_SHIFTS = [
   {start:'10:00', end:'20:00', net_h:8},
   {start:'13:30', end:'22:00', net_h:8},
   {start:'15:00', end:'23:30', net_h:8},
+  {start:'15:30', end:'00:00', net_h:8},
   {start:'08:00', end:'12:00', net_h:4},
   {start:'13:30', end:'17:30', net_h:4},
 ];
 
 // ============================================================
-// 工具函数
+// 宸ュ叿鍑芥暟
 // ============================================================
 function parseShiftTime(s) {
   if (!s) return null;
@@ -180,28 +182,7 @@ function parseShiftTime(s) {
 
 function timeToMin(t) { return t.h * 60 + t.m; }
 
-function getDeptShifts(dept) {
-  if (!dept) return [];
-  let val = DEPT_SHIFTS[dept];
-  if (!val) {
-    // 模糊匹配
-    for (const [d, v] of Object.entries(DEPT_SHIFTS)) {
-      if (Array.isArray(v) && (dept.includes(d) || d.includes(dept))) return v;
-    }
-    return [];
-  }
-  if (Array.isArray(val)) return val;
-  if (typeof val === 'string' && val.startsWith('SAME_AS_')) {
-    const refDept = ALIAS_MAP[val] || '';
-    if (refDept && DEPT_SHIFTS[refDept]) {
-      const rv = DEPT_SHIFTS[refDept];
-      if (Array.isArray(rv)) return rv;
-    }
-  }
-  return [];
-}
-
-// 解析打卡时间字符串为 [{h,m}] 数组
+// 瑙ｆ瀽鎵撳崱鏃堕棿瀛楃涓蹭负 [{h,m}] 鏁扮粍
 function parseTimes(str) {
   if (!str || str.trim() === '' || str.trim() === '-') return [];
   const times = [];
@@ -213,7 +194,7 @@ function parseTimes(str) {
       if (!isNaN(h) && !isNaN(m)) times.push({h, m});
     }
   }
-  // 排序：凌晨(h<5)放后面
+  // 鎺掑簭锛氬噷鏅?h<5)鏀惧悗闈?
   times.sort((a, b) => {
     const ka = a.h < 5 ? 1440 + a.h * 60 + a.m : a.h * 60 + a.m;
     const kb = b.h < 5 ? 1440 + b.h * 60 + b.m : b.h * 60 + b.m;
@@ -222,7 +203,7 @@ function parseTimes(str) {
   return times;
 }
 
-// 去重（间隔<5分钟合并）
+// 鍘婚噸锛堥棿闅?5鍒嗛挓鍚堝苟锛?
 function dedupTimes(times) {
   if (times.length <= 1) return times;
   const res = [times[0]];
@@ -234,200 +215,102 @@ function dedupTimes(times) {
   return res;
 }
 
-// 班次匹配（四条件匹配法：能上满 + 最接近 + 优先不迟到 + 卡型吻合）
-// useUniversal=true 时用通用班次模板（用于部门无配置或班次不全时）
-function inferShiftFromDept(times, dept, useUniversal) {
-  // 四条件匹配（按优先级）：
-  // 1. 能上满：最后一张打卡 >= 班次正常下班时间（允许合理提前5分钟）
-  // 2. 最接近：第一张上班打卡离哪个班次start最近
-  // 3. 同距离时优先不迟到：距离相等的班次中，优先选第一张打卡 <= 班次start的
-  // 4. 同距离+同迟到时，优先卡型吻合的班次
-  let shifts = getDeptShifts(dept);
-  // 部门无配置或强制使用通用模板时，用 UNIVERSAL_SHIFTS
-  if (!shifts.length || useUniversal) shifts = UNIVERSAL_SHIFTS;
-  const normalTimes = times.filter(t => t.h >= 6);
-  if (!normalTimes.length) return null;
-
-  const firstPunch = normalTimes[0];
-  const firstPunchMin = timeToMin(firstPunch);
-  const lastPunch = times[times.length - 1];
-  const lastPunchMin = timeToMin(lastPunch);
-
-  const hasMorning = normalTimes.some(t => t.h < 12);
-  const hasAfternoon = normalTimes.some(t => t.h >= 13);
-
-  // ── 条件1：筛选能上满半天/一天的班次 ──
-  const canFill = [];
-  for (const shift of shifts) {
-    const sStart = parseShiftTime(shift.start);
-    const sEnd = parseShiftTime(shift.end);
-    if (sStart === null || sEnd === null) continue;
-
-    // 晚班特殊（上班>=15:00）：没有上午卡才考虑晚班
-    if (sStart >= 15 * 60 && hasMorning) continue;
-
-    // 半天班特殊：
-    // 上午半天（下班<=12:00）：有下午卡不可能是上午半天
-    if (sEnd <= 12 * 60 && hasAfternoon) continue;
-    // 下午半天（上班>=13:30）：有上午卡不可能是下午半天
-    if (sStart >= 13 * 60 && hasMorning) continue;
-
-    // 判断最后一张打卡是否打到班次正常下班时间或之后
-    let lastGteEnd;
-    if (sEnd <= 30) {
-      // 跨天班次（如下班00:00），凌晨卡也算
-      lastGteEnd = (lastPunchMin <= sStart && lastPunchMin + 24 * 60 >= sEnd) ||
-                   lastPunchMin >= sEnd;
-    } else {
-      lastGteEnd = lastPunchMin >= sEnd - 5;  // 允许5分钟提前
-    }
-
-    if (lastGteEnd) canFill.push(shift);
-  }
-
-  // ── 条件2：在能上满的班次中，选最接近的 ──
-  let pool;
-  if (!canFill.length) {
-    // 没有能上满的班次，回退：直接按最接近选（不要求上满）
-    const fallback = shifts.filter(s => parseShiftTime(s.start) !== null);
-    if (!fallback.length) return null;
-    pool = fallback;
-  } else {
-    pool = canFill;
-  }
-
-  // 按第一张打卡与班次start的距离排序
-  pool.sort((a, b) =>
-    Math.abs(firstPunchMin - parseShiftTime(a.start)) -
-    Math.abs(firstPunchMin - parseShiftTime(b.start))
-  );
-
-  // ── 条件3：同距离时优先不迟到的 ──
-  const bestDist = Math.abs(firstPunchMin - parseShiftTime(pool[0].start));
-  const sameDist = pool.filter(s => Math.abs(firstPunchMin - parseShiftTime(s.start)) === bestDist);
-
-  if (sameDist.length === 1) return sameDist[0];
-
-  // 距离相同时，优先选不迟到的（第一张打卡 <= 班次start）
-  const notLate = sameDist.filter(s => firstPunchMin <= parseShiftTime(s.start));
-  if (notLate.length === 1) return notLate[0];
-  const pool3 = notLate.length ? notLate : sameDist;
-  if (pool3.length === 1) return pool3[0];
-
-  // ── 条件4：卡型吻合度 ──
-  // 根据实际打卡分布与班次预期卡型的匹配程度打分
-  const cls = classifyPunchTimes(times);
-  const hasMornCard = cls.morning_start.length > 0;
-  const hasNoonCard = cls.noon_end.length > 0;
-  const hasAftStart = cls.afternoon_start.length > 0;
-  const hasAftEnd = cls.afternoon_end.length > 0;
-  const hasOtEnd = cls.overtime_end.length > 0;
-
-  const scored = pool3.map(s => {
-    const sStart = parseShiftTime(s.start);
-    const sEnd = parseShiftTime(s.end);
-    const netH = s.net_h || 8;
-    let score = 0;
-
-    if (sStart >= 13 * 60 && netH < 5) {
-      // 下午半天班（13:30-17:30等）：期望有afternoon卡，没有morning卡
-      if (hasAftStart) score += 3;
-      if (!hasMornCard) score += 2;
-      if (hasAftEnd) score += 1;
-    } else if (sEnd <= 12 * 60 + 5 && netH <= 5) {
-      // 上午半天班（8:00-12:00等）：期望有morning+noon卡，没有afternoon卡
-      if (hasMornCard) score += 3;
-      if (hasNoonCard) score += 2;
-      if (!hasAftStart) score += 1;
-    } else if (sStart >= 13 * 60 && netH >= 8) {
-      // 下午全天班（13:30-22:00等）：期望有afternoon+overtime卡，没有morning卡
-      if (hasAftStart) score += 3;
-      if (hasOtEnd) score += 2;
-      if (!hasMornCard) score += 2;
-    } else {
-      // 普通全天班（8:00-17:30、9:00-19:00等）：期望有morning卡
-      if (hasMornCard) score += 3;
-      if (hasNoonCard) score += 1;
-    }
-
-    return { shift: s, score };
-  });
-
-  scored.sort((a, b) => b.score - a.score);
-  return scored[0].shift;
-}
-
-// 获取部门所有班次中最早的上班时间（用于迟到判断基准）
-// 返回分钟数，无班次时返回null
-function getDeptEarliestStart(dept) {
-  const shifts = getDeptShifts(dept);
-  if (!shifts.length) return null;
-  let earliest = null;
-  for (const s of shifts) {
-    const m = parseShiftTime(s.start);
-    if (m === null) continue;
-    // 跳过半天班中的下午半天（start>=13:30），它们不影响上午迟到判断
-    if (m >= 13 * 60 && (s.net_h || 8) < 5) continue;
-    if (earliest === null || m < earliest) earliest = m;
-  }
-  return earliest;
-}
-
-// 统一的最佳班次推断函数
-// 返回完整的班次对象 {start, end, net_h, break_min, ...} 或 null
-// 优先用部门配置，匹配不合理时自动用通用模板兜底
-function getBestShift(times, dept) {
+// ============================================================
+// 鏂扮増鐝鍖归厤锛氬弻绔窛绂绘墦鍒嗘硶锛?026-06-30锛?
+// 瀵规墍鏈?1涓€氱敤鐝鎵撳垎锛屽彇鎬诲垎鏈€浣庣殑
+// 涓婄彮鍒?= |绗竴寮犳湁鏁堝崱 - 鐝涓婄彮|锛岃繜鍒?脳1.8
+// 涓嬬彮鍒?= |鏈€鍚庝竴寮犳湁鏁堝崱 - 鐝涓嬬彮|
+// 棰勮繃婊わ細鏈塶oon鍗℃棤morning鍗?鈫?鎺掗櫎绾笅鍗堢彮娆?
+// ============================================================
+function matchShift(times) {
   const normal = times.filter(t => t.h >= 6);
   if (!normal.length) return null;
-  const firstPunchMin = timeToMin(normal[0]);
 
-  // 1. 优先用部门配置匹配
-  const shift = inferShiftFromDept(times, dept);
-  if (shift) {
-    const shiftStartMin = parseShiftTime(shift.start);
-    const dist = Math.abs(firstPunchMin - shiftStartMin);
-    // 距离<=30分钟认为匹配合理，直接用部门配置
-    if (dist <= 30) return shift;
-    // 距离太远，说明部门班次不全，尝试通用模板
-    const uShift = inferShiftFromDept(times, dept, true);
-    if (uShift) {
-      const uDist = Math.abs(firstPunchMin - parseShiftTime(uShift.start));
-      // 通用模板更近才替换，否则保留部门配置
-      if (uDist < dist) return uShift;
-    }
-    return shift;
+  const cls = classifyPunchTimes(times);
+  const hasMorn = cls.morning_start.length > 0;
+  const hasNoon = cls.noon_end.length > 0;
+  const hasAf = cls.afternoon_start.length > 0 || cls.afternoon_end.length > 0 || cls.overtime_start.length > 0 || cls.overtime_end.length > 0;
+
+  // 鈹€鈹€ 绗竴寮犳湁鏁堝崱 鈹€鈹€
+  let firstPunch;
+  if (cls.morning_start.length) firstPunch = cls.morning_start[0];
+  else if (cls.noon_end.length) firstPunch = cls.noon_end[0];
+  else if (cls.afternoon_start.length) firstPunch = cls.afternoon_start[0];
+  else firstPunch = normal[0];
+  const firstMin = timeToMin(firstPunch);
+
+  // 鈹€鈹€ 鏈€鍚庝竴寮犳湁鏁堝崱 鈹€鈹€
+  const midnight = times.filter(t => t.h < 6);
+  let lastPunch;
+  if (cls.overtime_end.length) lastPunch = cls.overtime_end[cls.overtime_end.length - 1];
+  else if (cls.afternoon_end.length) lastPunch = cls.afternoon_end[cls.afternoon_end.length - 1];
+  else if (cls.overtime_start.length) lastPunch = cls.overtime_start[cls.overtime_start.length - 1];
+  else if (cls.afternoon_start.length) lastPunch = cls.afternoon_start[cls.afternoon_start.length - 1];
+  else if (midnight.length) lastPunch = midnight[midnight.length - 1];
+  else if (cls.noon_end.length) lastPunch = cls.noon_end[cls.noon_end.length - 1];
+  else lastPunch = normal[normal.length - 1];
+  let lastMin = timeToMin(lastPunch);
+  if (lastPunch.h < 6) lastMin += 1440;
+
+  let bestShift = null, bestScore = Infinity;
+
+  for (const shift of UNIVERSAL_SHIFTS) {
+    const sStart = parseShiftTime(shift.start);
+    let sEnd = parseShiftTime(shift.end);
+    const netH = shift.net_h || 8;
+
+    // 鈹€鈹€ 棰勮繃婊?鈹€鈹€
+    // 鏅氱彮(start>=15:00, 鍏ㄥぉ)锛氭湁涓婂崍鍗″氨鎺掗櫎
+    if (sStart >= 15 * 60 && netH >= 8 && hasMorn) continue;
+    // 涓婂崍鍗婂ぉ锛氭湁涓嬪崍鍗℃帓闄?
+    if (sEnd <= 12 * 60 && hasAf) continue;
+    // 涓嬪崍鍗婂ぉ锛氭湁涓婂崍鍗℃帓闄?
+    if (sStart >= 13 * 60 && netH < 5 && hasMorn) continue;
+    // 鏈塶oon鍗℃棤morning鍗★細鎺掗櫎绾笅鍗堢彮娆★紙noon鍗¤鏄庝笂鍗堟潵杩囷級
+    if (hasNoon && !hasMorn && sStart >= 13 * 60) continue;
+    // 绗竴寮犲崱>=13:00涓旀棤morning鍗★細鎺掗櫎涓婂崍鐝
+    if (sStart < 12 * 60 && !hasMorn && firstMin >= 13 * 60) continue;
+
+    // 鈹€鈹€ 涓婄彮鍒嗭細璺濈 脳 杩熷埌鎯╃綒 鈹€鈹€
+    let mScore = Math.abs(firstMin - sStart);
+    if (firstMin > sStart) mScore *= 1.8;
+
+    // 鈹€鈹€ 涓嬬彮鍒?鈹€鈹€
+    let effEnd = sEnd;
+    if (effEnd <= 30 && lastMin > sStart) effEnd += 1440; // 璺ㄥぉ
+    let eScore = Math.abs(lastMin - effEnd);
+
+    // 鈹€鈹€ 鍗婂ぉ鐝姞鎴?鈹€鈹€
+    if (sEnd <= 12 * 60 && !hasAf && hasMorn) eScore *= 0.3;
+    if (sStart >= 13 * 60 && netH < 5 && !hasMorn && hasAf) mScore *= 0.3;
+
+    const total = mScore + eScore;
+    if (total < bestScore) { bestScore = total; bestShift = shift; }
   }
-
-  // 2. 部门无配置，用通用模板
-  const uShift = inferShiftFromDept(times, dept, true);
-  return uShift || null;
+  return bestShift;
 }
 
-function getShiftStartFromDept(times, dept) {
-  if (dept.includes('保安') || dept.includes('卫生')) {
+function getShiftStart(times, dept) {
+  // 淇濆畨/鍗敓缁勶細鍥哄畾鐝
+  if (dept && (dept.includes('淇濆畨') || dept.includes('鍗敓'))) {
     const normal = times.filter(t => t.h >= 6);
     if (normal.length && normal.some(t => t.h < 12)) return {h:6, m:30};
     return {h:16, m:0};
   }
-  const best = getBestShift(times, dept);
-  if (best) {
-    const [h, m] = best.start.split(':').map(Number);
+  const shift = matchShift(times);
+  if (shift) {
+    const [h, m] = shift.start.split(':').map(Number);
     return {h, m};
   }
-  const normal = times.filter(t => t.h >= 6);
-  if (!normal.length) return {h:8, m:0};
-  // 最终兜底：按第一张打卡小时推断（整点）
-  const first = normal[0];
-  if (first.h <= 7) return {h:7, m:0};
-  if (first.h === 8) return {h:8, m:0};
-  if (first.h === 9) return {h:9, m:0};
-  if (first.h === 10) return {h:10, m:0};
-  if (first.h === 13) return {h:13, m:30};
-  if (first.h >= 15) return {h:15, m:0};
-  return {h:first.h, m:0};
+  return {h:8, m:0};
 }
 
-// 打卡分类
+function getBestShift(times, dept) {
+  if (dept && (dept.includes('淇濆畨') || dept.includes('鍗敓'))) return null;
+  return matchShift(times);
+}
+
+// 鎵撳崱鍒嗙被
 function classifyPunchTimes(times) {
   const result = {morning_start:[], noon_end:[], afternoon_start:[], afternoon_end:[], overtime_start:[], overtime_end:[]};
   if (!times.length) return result;
@@ -507,7 +390,7 @@ function adjustClassified(cls, dept, times) {
   return cls;
 }
 
-// 推断缺失的上午上班时间（前后天参考）
+// 鎺ㄦ柇缂哄け鐨勪笂鍗堜笂鐝椂闂达紙鍓嶅悗澶╁弬鑰冿級
 function inferMissingMorningStart(dayIdx, processedDays, dept) {
   function getMorning(idx) {
     if (idx < 0 || idx >= processedDays.length) return null;
@@ -517,17 +400,17 @@ function inferMissingMorningStart(dayIdx, processedDays, dept) {
     times = dedupTimes(times);
     const cls = classifyPunchTimes(times);
     if (cls.morning_start.length) {
-      return getShiftStartFromDept(times, dept);
+      return getShiftStart(times, dept);
     }
     return null;
   }
   return getMorning(dayIdx-1) || getMorning(dayIdx+1);
 }
 
-// 计算全天工时
+// 璁＄畻鍏ㄥぉ宸ユ椂
 function calculateAllHours(times, dept, dayIdx, processedDays) {
   if (!times.length) return {morning:0, afternoon:0, night:0, total:0};
-  const midCutoff = (dept.includes('保安') || dept.includes('卫生')) ? 5 : 6;
+  const midCutoff = (dept.includes('淇濆畨') || dept.includes('鍗敓')) ? 5 : 6;
   const midnightCards = times.filter(t=>t.h<midCutoff);
   const normalCards = times.filter(t=>t.h>=midCutoff);
   if (midnightCards.length && !normalCards.length) return {morning:0, afternoon:0, night:0, total:0};
@@ -535,7 +418,7 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
   const hasMorningCard = times.some(t=>t.h>=midCutoff && t.h<12);
   const hasAfternoonCard = times.some(t=>t.h>=13);
 
-  // 只有下午/晚上（无上午卡）→ 用班次推断计算
+  // 鍙湁涓嬪崍/鏅氫笂锛堟棤涓婂崍鍗★級鈫?鐢ㄧ彮娆℃帹鏂绠?
   if (hasAfternoonCard && !hasMorningCard) {
     const nc = times.filter(t=>t.h>=6).sort((a,b)=>timeToMin(a)-timeToMin(b));
     if (!nc.length) return {morning:0, afternoon:0, night:0, total:0};
@@ -543,7 +426,7 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
     let lastMin = timeToMin(nc[nc.length-1]);
     if (midnightCards.length) lastMin = 24*60 + timeToMin(midnightCards[midnightCards.length-1]);
 
-    // 用班次推断来计算工时
+    // 鐢ㄧ彮娆℃帹鏂潵璁＄畻宸ユ椂
     const matchedShift = getBestShift(times, dept);
     let totalH = 0;
 
@@ -552,44 +435,44 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
       const netH = matchedShift.net_h || 8;
 
       if (netH <= 5) {
-        // 半天班：工时 = 第一张卡到班次下班时间（net_h小时）
-        // 但不超过实际打卡时间跨度
+        // 鍗婂ぉ鐝細宸ユ椂 = 绗竴寮犲崱鍒扮彮娆′笅鐝椂闂达紙net_h灏忔椂锛?
+        // 浣嗕笉瓒呰繃瀹為檯鎵撳崱鏃堕棿璺ㄥ害
         const sEnd = parseShiftTime(matchedShift.end);
-        let endMin = sEnd <= 30 ? sEnd + 24*60 : sEnd; // 跨天处理
-        if (endMin <= sStart) endMin += 24*60; // 防止endMin < sStart
+        let endMin = sEnd <= 30 ? sEnd + 24*60 : sEnd; // 璺ㄥぉ澶勭悊
+        if (endMin <= sStart) endMin += 24*60; // 闃叉endMin < sStart
         totalH = Math.min(netH, (lastMin - firstMin) / 60);
         if (totalH < 0) totalH = 0;
       } else {
-        // 全天班：工时 = min(实际跨度, 班次净工时)
+        // 鍏ㄥぉ鐝細宸ユ椂 = min(瀹為檯璺ㄥ害, 鐝鍑€宸ユ椂)
         const elapsed = (lastMin - firstMin) / 60;
         totalH = Math.min(netH, elapsed);
         if (totalH < 0) totalH = 0;
       }
     } else {
-      // 无班次匹配兜底：按实际打卡跨度计算
+      // 鏃犵彮娆″尮閰嶅厹搴曪細鎸夊疄闄呮墦鍗¤法搴﹁绠?
       totalH = (lastMin - firstMin) / 60;
       if (totalH < 0) totalH = 0;
     }
     return {morning:0, afternoon:totalH, night:0, total:totalH};
   }
 
-  // 正常（有上午卡）
+  // 姝ｅ父锛堟湁涓婂崍鍗★級
   let cls = classifyPunchTimes(times);
   cls = adjustClassified(cls, dept, times);
 
   let mornHours=0, afHours=0, nightHours=0;
 
-  // 推断上班时间 & 获取班次配置
+  // 鎺ㄦ柇涓婄彮鏃堕棿 & 鑾峰彇鐝閰嶇疆
   let morningStart = null;
   let matchedShift = null;
   if (cls.morning_start.length) {
-    morningStart = getShiftStartFromDept(times, dept);
+    morningStart = getShiftStart(times, dept);
     matchedShift = getBestShift(times, dept);
   } else if (cls.noon_end.length && dayIdx !== undefined && processedDays) {
     morningStart = inferMissingMorningStart(dayIdx, processedDays, dept);
   }
-  // 缺上午上班卡但有noon_end：用noon_end反推（默认上午工作4h）
-  // 有noon_end说明上午来了，只是没打卡，不应算成半天
+  // 缂轰笂鍗堜笂鐝崱浣嗘湁noon_end锛氱敤noon_end鍙嶆帹锛堥粯璁や笂鍗堝伐浣?h锛?
+  // 鏈塶oon_end璇存槑涓婂崍鏉ヤ簡锛屽彧鏄病鎵撳崱锛屼笉搴旂畻鎴愬崐澶?
   if (!morningStart && cls.noon_end.length) {
     const best = getBestShift(times, dept);
     if (best) {
@@ -597,31 +480,31 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
       morningStart = {h, m};
       matchedShift = best;
     } else {
-      // 无班次匹配，用noon_end反推4h
+      // 鏃犵彮娆″尮閰嶏紝鐢╪oon_end鍙嶆帹4h
       const noonEnd = cls.noon_end[0];
       let inferredMin = timeToMin(noonEnd) - 4 * 60;
-      if (inferredMin < 6 * 60) inferredMin = 7 * 60; // 不早于7:00
+      if (inferredMin < 6 * 60) inferredMin = 7 * 60; // 涓嶆棭浜?:00
       morningStart = {h: Math.floor(inferredMin / 60), m: inferredMin % 60};
     }
   }
 
-  // 上午工时
+  // 涓婂崍宸ユ椂
   if (morningStart) {
-    const noonCutoff = dept.includes('保安') ? {h:11,m:50} : {h:12,m:0};
-    let mornEndMin = timeToMin(noonCutoff); // 默认算到12:00
+    const noonCutoff = dept.includes('淇濆畨') ? {h:11,m:50} : {h:12,m:0};
+    let mornEndMin = timeToMin(noonCutoff); // 榛樿绠楀埌12:00
 
-    // 如果有下午卡（afternoon_start/end或overtime），说明全天班，上午到12:00
+    // 濡傛灉鏈変笅鍗堝崱锛坅fternoon_start/end鎴杘vertime锛夛紝璇存槑鍏ㄥぉ鐝紝涓婂崍鍒?2:00
     const hasAnyAfternoon = cls.afternoon_start.length || cls.afternoon_end.length || cls.overtime_start.length || cls.overtime_end.length;
     if (!cls.noon_end.length && !hasAnyAfternoon) {
-      // 没有noon_end也没有任何下午卡 → 可能是半天班（只有上午）
-      // 用最后一张morning_start卡作为上午实际截止
+      // 娌℃湁noon_end涔熸病鏈変换浣曚笅鍗堝崱 鈫?鍙兘鏄崐澶╃彮锛堝彧鏈変笂鍗堬級
+      // 鐢ㄦ渶鍚庝竴寮爉orning_start鍗′綔涓轰笂鍗堝疄闄呮埅姝?
       if (cls.morning_start.length) {
         const lastMorn = cls.morning_start[cls.morning_start.length - 1];
         mornEndMin = Math.min(timeToMin(noonCutoff), timeToMin(lastMorn));
       }
     }
 
-    // 起算点 = max(morningStart, 第一张上午卡)：迟到时段不算工时
+    // 璧风畻鐐?= max(morningStart, 绗竴寮犱笂鍗堝崱)锛氳繜鍒版椂娈典笉绠楀伐鏃?
     let mornStartMin = timeToMin(morningStart);
     if (cls.morning_start.length) {
       const firstMornCardMin = timeToMin(cls.morning_start[0]);
@@ -632,18 +515,15 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
     if (mornMin > 0) mornHours = mornMin / 60;
   }
 
-  // 下午工时（用班次正常下班时间）
+  // 涓嬪崍宸ユ椂锛堢敤鍖归厤鐝鐨勬甯镐笅鐝椂闂达級
   const hasAfWork = cls.afternoon_end.length || cls.overtime_start.length || cls.overtime_end.length || cls.afternoon_start.length;
   if (hasAfWork) {
     const afStart = {h:13, m:30};
-    let normalEndTime = {h:17, m:30};
-    if (morningStart) {
-      if (morningStart.h === 7 && morningStart.m === 0) normalEndTime = {h:16, m:30};
-      else if (morningStart.h === 7 && morningStart.m === 30) normalEndTime = {h:17, m:0};
-      else if (morningStart.h === 9) normalEndTime = {h:19, m:0};
-      else if (morningStart.h === 10) normalEndTime = {h:20, m:0};
-      else if (morningStart.h === 13) normalEndTime = {h:22, m:0};
-      else if (morningStart.h === 15) normalEndTime = {h:23, m:30};
+    let normalEndTime = {h:17, m:30}; // 鍏滃簳榛樿
+    // 浼樺厛浠庡尮閰嶇彮娆″彇涓嬬彮鏃堕棿
+    if (matchedShift) {
+      const [eh, em] = matchedShift.end.split(':').map(Number);
+      normalEndTime = {h: eh, m: em};
     }
     const hasOT = cls.overtime_end.length > 0;
     let afEnd;
@@ -660,20 +540,21 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
       afEnd = normalEndTime;
     }
     let afMin = timeToMin(afEnd) - timeToMin(afStart);
-    // 根据班次配置的break_min扣除下午休息时间（如9:00/10:00班break_min=30）
-    // 8:00班break_min=0则不扣，12:00-13:30的1.5h已在起算点自然扣除
+    // 鏍规嵁鐝閰嶇疆鐨刡reak_min鎵ｉ櫎涓嬪崍浼戞伅鏃堕棿锛堝9:00/10:00鐝璪reak_min=30锛?
+    // 8:00鐝璪reak_min=0鍒欎笉鎵ｏ紝12:00-13:30鐨?.5h宸插湪璧风畻鐐硅嚜鐒舵墸闄?
     const breakMin = (matchedShift && matchedShift.break_min) ? matchedShift.break_min : 0;
     if (breakMin > 0 && afMin >= breakMin) afMin -= breakMin;
     if (afMin > 0) afHours = afMin / 60;
   }
 
-  // 晚上加班工时
+  // 鏅氫笂鍔犵彮宸ユ椂
   if (cls.overtime_end.length) {
     const lastOT = cls.overtime_end[cls.overtime_end.length-1];
-    let otStart = {h:18, m:0};
-    if (morningStart) {
-      if (morningStart.h === 9) otStart = {h:19, m:0};
-      else if (morningStart.h === 10) otStart = {h:20, m:0};
+    // 鍔犵彮璧风偣 = 鐝姝ｅ父涓嬬彮鏃堕棿锛堝嵆姝ｅ父涓嬬彮鍚庢湁鍔犵彮鍗℃墠绠楀姞鐝級
+    let otStart = {h:18, m:0}; // 鍏滃簳榛樿
+    if (matchedShift) {
+      const [eh, em] = matchedShift.end.split(':').map(Number);
+      otStart = {h: eh, m: em};
     }
     let nightMin;
     if (lastOT.h < 6) {
@@ -688,16 +569,25 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
   return {morning: mornHours, afternoon: afHours, night: nightHours, total};
 }
 
-// 出勤+加班计算
+// 鍑哄嫟+鍔犵彮璁＄畻
 function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
-  const noOt = dept.includes('保安') || dept.includes('卫生');
+  const noOt = dept.includes('淇濆畨') || dept.includes('鍗敓');
   if (noOt) {
     return {attendanceDays: times.length ? 1 : 0, paidDays: times.length ? 1 : 0, overtimeHours: 0, halfDay: false};
   }
   if (!times.length) return {attendanceDays:0, paidDays:0, overtimeHours:0, halfDay:false};
 
   const {total: totalH} = calculateAllHours(times, dept, dayIdx, processedDays);
-  let attendanceDays = totalH >= 8 ? 1 : totalH >= 4 ? 0.5 : 0;
+  // 鍑哄嫟澶╂暟锛氭寜涓?涓嬪崍鎵撳崱瀛樺湪鎬у垽鏂紙涓嶅洜杩熷埌鎵ｅ嚭鍕わ紝杩熷埌鍦ㄨ繜鍒扮粺璁″垪浣撶幇锛?
+  let clsAttendance = classifyPunchTimes(times);
+  clsAttendance = adjustClassified(clsAttendance, dept, times);
+  const hasMorning = clsAttendance.morning_start.length > 0 || clsAttendance.noon_end.length > 0;
+  const hasAfternoon = clsAttendance.afternoon_start.length > 0 || clsAttendance.afternoon_end.length > 0
+                    || clsAttendance.overtime_start.length > 0 || clsAttendance.overtime_end.length > 0;
+  let attendanceDays;
+  if (hasMorning && hasAfternoon) attendanceDays = 1;
+  else if (hasMorning || hasAfternoon) attendanceDays = 0.5;
+  else attendanceDays = 0;
   const standardH = attendanceDays >= 1 ? 8 : attendanceDays >= 0.5 ? 4 : 0;
   let rawOt = totalH - standardH;
 
@@ -721,20 +611,18 @@ function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
     overtimeHours = Math.floor(remainOt * 2) * 0.5;
   }
 
-  // 半天标记：出勤0.5天时标记半天
-  // 排除有下午上班卡的case（有afternoon_start说明是全天上班但工时不够半天的不算）
-  const hasAfStart = times.some(t => t.h >= 13 && t.h < 17);
-  const halfDay = (attendanceDays === 0.5 && !hasAfStart);
+  // 鍗婂ぉ鏍囪锛氫粎褰撳疄闄呭嚭鍕ゆ濂?.5澶╂椂鏍囪
+  const halfDay = attendanceDays === 0.5;
 
   return {attendanceDays, paidDays, overtimeHours, halfDay};
 }
 
-// 缺卡计算
+// 缂哄崱璁＄畻
 function calcMissingCards(times, dept) {
   if (!times.length) return {count:0, types:[]};
 
-  // 保安/卫生组06:30上班，05:xx可能是早到，不算凌晨卡
-  const midCutoff = (dept.includes('保安') || dept.includes('卫生')) ? 5 : 6;
+  // 淇濆畨/鍗敓缁?6:30涓婄彮锛?5:xx鍙兘鏄棭鍒帮紝涓嶇畻鍑屾櫒鍗?
+  const midCutoff = (dept.includes('淇濆畨') || dept.includes('鍗敓')) ? 5 : 6;
   const midnight = times.filter(t=>t.h<midCutoff);
   let normal = times.filter(t=>t.h>=midCutoff);
   if (midnight.length && !normal.length) return {count:0, types:[]};
@@ -763,8 +651,8 @@ function calcMissingCards(times, dept) {
     }
     const hasAfWork = hasAfStart || hasAfEnd || hasOtEnd;
     if (hasAfWork) {
-      // 缺afternoon_start：没有afternoon_start也没有noon_buffer区间的卡
-      // 有afternoon_end/overtime_start说明下午来了，不判缺afternoon_start
+      // 缂篴fternoon_start锛氭病鏈塧fternoon_start涔熸病鏈塶oon_buffer鍖洪棿鐨勫崱
+      // 鏈塧fternoon_end/overtime_start璇存槑涓嬪崍鏉ヤ簡锛屼笉鍒ょ己afternoon_start
       if (!hasAfStart && !hasNoonArr && !hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_start'); }
       if (!hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_end'); }
     }
@@ -780,12 +668,12 @@ function calcMissingCards(times, dept) {
   return {count, types};
 }
 
-// 凌晨卡跨天处理
+// 鍑屾櫒鍗¤法澶╁鐞?
 function preprocessCrossMidnight(empDays, dept) {
   const processed = [...empDays];
-  const isWeisheng = dept && dept.includes('卫生');
+  const isWeisheng = dept && dept.includes('鍗敓');
   const midCutoff = isWeisheng ? 5 : 6;
-  // 首日凌晨卡处理
+  // 棣栨棩鍑屾櫒鍗″鐞?
   if (processed.length && processed[0]) {
     const day0Times = parseTimes(processed[0]);
     const midnights = day0Times.filter(t=>t.h<midCutoff);
@@ -821,7 +709,7 @@ function preprocessCrossMidnight(empDays, dept) {
 }
 
 // ============================================================
-// 全局状态
+// 鍏ㄥ眬鐘舵€?
 // ============================================================
 let rawWorkbook = null;
 let employees = [];
@@ -829,10 +717,10 @@ let dateHeaders = [];
 let satSunCols = [];
 let empStats = [];
 let processedResult = null;
-let hasNextMonthCol = false;  // 是否有下月1号列（凌晨卡跨天用）
+let hasNextMonthCol = false;  // 鏄惁鏈変笅鏈?鍙峰垪锛堝噷鏅ㄥ崱璺ㄥぉ鐢級
 
 // ============================================================
-// UI 事件
+// UI 浜嬩欢
 // ============================================================
 let uploadArea, fileInput;
 document.addEventListener('DOMContentLoaded', () => {
@@ -842,7 +730,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   uploadArea.addEventListener('click', () => fileInput.click());
 
-  // 全局 + uploadArea 都阻止默认拖拽行为
+  // 鍏ㄥ眬 + uploadArea 閮介樆姝㈤粯璁ゆ嫋鎷借涓?
   function preventDrag(e) { e.preventDefault(); e.stopPropagation(); }
   ['dragenter','dragover','dragleave','drop'].forEach(name => {
     document.addEventListener(name, preventDrag);
@@ -862,18 +750,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function fixSheetRef(wb) {
-  // 修复得力导出的xlsx文件dimension错误（如4月文件!ref=A1:AI2，实际数据有570行）
-  // 策略：遍历所有sheet，用实际行号范围覆盖!ref
+  // 淇寰楀姏瀵煎嚭鐨剎lsx鏂囦欢dimension閿欒锛堝4鏈堟枃浠?ref=A1:AI2锛屽疄闄呮暟鎹湁570琛岋級
+  // 绛栫暐锛氶亶鍘嗘墍鏈塻heet锛岀敤瀹為檯琛屽彿鑼冨洿瑕嗙洊!ref
   for (const sn of wb.SheetNames) {
     const ws = wb.Sheets[sn];
     if (!ws['!ref']) continue;
-    // 找到所有行号（行号=属性名去掉列字母，如A3→3, Z100→100）
+    // 鎵惧埌鎵€鏈夎鍙凤紙琛屽彿=灞炴€у悕鍘绘帀鍒楀瓧姣嶏紝濡侫3鈫?, Z100鈫?00锛?
     let maxR = 0;
     const refMatch = ws['!ref'].match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i);
     if (!refMatch) continue;
     const minCol = refMatch[1], minRow = parseInt(refMatch[2]);
     const origMaxCol = refMatch[3], origMaxRow = parseInt(refMatch[4]);
-    // 遍历所有cell，找最大行号
+    // 閬嶅巻鎵€鏈塩ell锛屾壘鏈€澶ц鍙?
     for (const key in ws) {
       if (key[0] === '!') continue;
       const m = key.match(/^([A-Z]+)(\d+)$/);
@@ -884,7 +772,7 @@ function fixSheetRef(wb) {
     }
     if (maxR > origMaxRow) {
       ws['!ref'] = minCol + minRow + ':' + origMaxCol + maxR;
-      console.log('修复sheet ' + sn + ' !ref: ' + ws['!ref'] + ' (原: ' + minCol + minRow + ':' + origMaxCol + origMaxRow + ')');
+      console.log('淇sheet ' + sn + ' !ref: ' + ws['!ref'] + ' (鍘? ' + minCol + minRow + ':' + origMaxCol + origMaxRow + ')');
     }
   }
 }
@@ -893,25 +781,25 @@ function handleFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
     rawWorkbook = XLSX.read(e.target.result, {type:'array', raw:false, cellDates:false, cellText:true, cellNF:false});
-    fixSheetRef(rawWorkbook); // 修复dimension错误
+    fixSheetRef(rawWorkbook); // 淇dimension閿欒
     parseExcel();
-    document.getElementById('fileInfo').textContent = `✓ 已加载：${file.name}（${employees.length} 名员工，${dateHeaders.length} 天数据）`;
+    document.getElementById('fileInfo').textContent = `鉁?宸插姞杞斤細${file.name}锛?{employees.length} 鍚嶅憳宸ワ紝${dateHeaders.length} 澶╂暟鎹級`;
     document.getElementById('fileInfo').classList.remove('hidden');
     document.getElementById('btnProcess').disabled = false;
-    logMsg('ok', `文件解析成功：${employees.length} 名员工，${dateHeaders.length} 个日期列`);
+    logMsg('ok', `鏂囦欢瑙ｆ瀽鎴愬姛锛?{employees.length} 鍚嶅憳宸ワ紝${dateHeaders.length} 涓棩鏈熷垪`);
   };
   reader.readAsArrayBuffer(file);
 }
 
 function parseExcel() {
   const ws = rawWorkbook.Sheets[rawWorkbook.SheetNames[0]];
-  // blankrows: true 确保空行不丢失（row2是空行，不能跳过）
+  // blankrows: true 纭繚绌鸿涓嶄涪澶憋紙row2鏄┖琛岋紝涓嶈兘璺宠繃锛?
   const data = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:'', blankrows:true});
 
-  // ---- 自动检测表头行（row1）和员工数据起始行 ----
-  // 得力导出格式：row1=表头(姓名/工号/部门+日期), row2=空行, row3+=员工
-  // 但 SheetJS 某些情况下可能跳过空行，所以不能硬编码 i=2
-  // 策略：找到第一个col1="姓名"的行作为表头行，之后的非空行作为员工数据
+  // ---- 鑷姩妫€娴嬭〃澶磋锛坮ow1锛夊拰鍛樺伐鏁版嵁璧峰琛?----
+  // 寰楀姏瀵煎嚭鏍煎紡锛歳ow1=琛ㄥご(濮撳悕/宸ュ彿/閮ㄩ棬+鏃ユ湡), row2=绌鸿, row3+=鍛樺伐
+  // 浣?SheetJS 鏌愪簺鎯呭喌涓嬪彲鑳借烦杩囩┖琛岋紝鎵€浠ヤ笉鑳界‖缂栫爜 i=2
+  // 绛栫暐锛氭壘鍒扮涓€涓猚ol1="濮撳悕"鐨勮浣滀负琛ㄥご琛岋紝涔嬪悗鐨勯潪绌鸿浣滀负鍛樺伐鏁版嵁
 
   let headerRowIdx = -1;
   let empStartIdx = -1;
@@ -919,29 +807,29 @@ function parseExcel() {
     const c0 = String(data[i][0] || '').trim();
     const c1 = String(data[i][1] || '').trim();
     const c2 = String(data[i][2] || '').trim();
-    if (c0 === '姓名' && (c1 === '工号' || c2 === '部门' || c1.includes('工号') || c2.includes('部门'))) {
+    if (c0 === '濮撳悕' && (c1 === '宸ュ彿' || c2 === '閮ㄩ棬' || c1.includes('宸ュ彿') || c2.includes('閮ㄩ棬'))) {
       headerRowIdx = i;
       continue;
     }
-    // 表头行之后的第一个有姓名的行就是员工起始行
-    if (headerRowIdx >= 0 && empStartIdx < 0 && c0 && c0 !== 'nan' && c0 !== '姓名') {
+    // 琛ㄥご琛屼箣鍚庣殑绗竴涓湁濮撳悕鐨勮灏辨槸鍛樺伐璧峰琛?
+    if (headerRowIdx >= 0 && empStartIdx < 0 && c0 && c0 !== 'nan' && c0 !== '濮撳悕') {
       empStartIdx = i;
       break;
     }
   }
 
   if (headerRowIdx < 0) {
-    alert('文件格式不对，未找到表头行（姓名/工号/部门）');
+    alert('鏂囦欢鏍煎紡涓嶅锛屾湭鎵惧埌琛ㄥご琛岋紙濮撳悕/宸ュ彿/閮ㄩ棬锛?);
     return;
   }
   if (empStartIdx < 0) {
-    alert('文件格式不对，未找到员工数据');
+    alert('鏂囦欢鏍煎紡涓嶅锛屾湭鎵惧埌鍛樺伐鏁版嵁');
     return;
   }
 
   const headers = data[headerRowIdx];
 
-  // 获取日期列（col4开始），同时确定最大列数（避免空列导致某些员工days长度不一致）
+  // 鑾峰彇鏃ユ湡鍒楋紙col4寮€濮嬶級锛屽悓鏃剁‘瀹氭渶澶у垪鏁帮紙閬垮厤绌哄垪瀵艰嚧鏌愪簺鍛樺伐days闀垮害涓嶄竴鑷达級
   const rawDateHeaders = [];
   let maxCol = headers.length;
   for (let i = empStartIdx; i < data.length; i++) {
@@ -951,17 +839,17 @@ function parseExcel() {
     rawDateHeaders.push(String(headers[j] || ''));
   }
 
-  // 过滤掉末尾的空列（得力导出可能保留空列，或导出不全月时后续列为空）
+  // 杩囨护鎺夋湯灏剧殑绌哄垪锛堝緱鍔涘鍑哄彲鑳戒繚鐣欑┖鍒楋紝鎴栧鍑轰笉鍏ㄦ湀鏃跺悗缁垪涓虹┖锛?
   let trimEnd = rawDateHeaders.length;
   while (trimEnd > 0 && rawDateHeaders[trimEnd - 1].trim() === '') trimEnd--;
 
   const trimmedHeaders = rawDateHeaders.slice(0, trimEnd);
   if (trimmedHeaders.length === 0) {
-    alert('文件格式不对，未找到日期列');
+    alert('鏂囦欢鏍煎紡涓嶅锛屾湭鎵惧埌鏃ユ湡鍒?);
     return;
   }
 
-  // 检测下月1号列：最后一个日期列的月份是否不同于第一个日期列的月份
+  // 妫€娴嬩笅鏈?鍙峰垪锛氭渶鍚庝竴涓棩鏈熷垪鐨勬湀浠芥槸鍚︿笉鍚屼簬绗竴涓棩鏈熷垪鐨勬湀浠?
   let firstMonth = null, lastMonth = null;
   for (const h of trimmedHeaders) {
     const m = h.match(/(\d{1,2})-(\d{1,2})/);
@@ -972,9 +860,9 @@ function parseExcel() {
   }
   hasNextMonthCol = false;
   if (firstMonth !== null && lastMonth !== null && lastMonth !== firstMonth) {
-    hasNextMonthCol = true; // 最后一列是下月1号
+    hasNextMonthCol = true; // 鏈€鍚庝竴鍒楁槸涓嬫湀1鍙?
   } else if (firstMonth !== null && trimmedHeaders.length >= 2) {
-    // 同月份：检查最后一列是否是"01"号（下月1号）
+    // 鍚屾湀浠斤細妫€鏌ユ渶鍚庝竴鍒楁槸鍚︽槸"01"鍙凤紙涓嬫湀1鍙凤級
     const lastDate = trimmedHeaders[trimmedHeaders.length - 1];
     const lm = lastDate.match(/(\d{1,2})-(\d{1,2})/);
     if (lm) {
@@ -983,7 +871,7 @@ function parseExcel() {
       const pm = prevDate.match(/(\d{1,2})-(\d{1,2})/);
       if (pm) {
         const prevDay = parseInt(pm[2]);
-        // 如果最后一列是1号，且倒数第二列是28/29/30/31（说明是跨月）
+        // 濡傛灉鏈€鍚庝竴鍒楁槸1鍙凤紝涓斿€掓暟绗簩鍒楁槸28/29/30/31锛堣鏄庢槸璺ㄦ湀锛?
         if (lastDay === 1 && prevDay >= 28) {
           hasNextMonthCol = true;
         }
@@ -991,7 +879,7 @@ function parseExcel() {
     }
   }
 
-  // 如果有下月1号列，去掉它（它只用于凌晨卡跨天，不计入出勤/加班/迟到）
+  // 濡傛灉鏈変笅鏈?鍙峰垪锛屽幓鎺夊畠锛堝畠鍙敤浜庡噷鏅ㄥ崱璺ㄥぉ锛屼笉璁″叆鍑哄嫟/鍔犵彮/杩熷埌锛?
   if (hasNextMonthCol) {
     dateHeaders = trimmedHeaders.slice(0, -1);
   } else {
@@ -1000,13 +888,13 @@ function parseExcel() {
 
   satSunCols = [];
 
-  // 第一优先：从表头文字中找"周六"/"周日"
+  // 绗竴浼樺厛锛氫粠琛ㄥご鏂囧瓧涓壘"鍛ㄥ叚"/"鍛ㄦ棩"
   for (let i = 0; i < dateHeaders.length; i++) {
     const h = String(dateHeaders[i]);
-    if (h.includes('周六') || h.includes('周日')) satSunCols.push(i);
+    if (h.includes('鍛ㄥ叚') || h.includes('鍛ㄦ棩')) satSunCols.push(i);
   }
 
-  // 如果表头没有星期信息，尝试从"MM-DD"格式日期解析出星期
+  // 濡傛灉琛ㄥご娌℃湁鏄熸湡淇℃伅锛屽皾璇曚粠"MM-DD"鏍煎紡鏃ユ湡瑙ｆ瀽鍑烘槦鏈?
   if (satSunCols.length === 0) {
     let detectedYear = new Date().getFullYear();
     let detectedMonth = null;
@@ -1027,7 +915,7 @@ function parseExcel() {
     }
   }
 
-  // 如果还是找不到，显示月份补填框，等待用户输入
+  // 濡傛灉杩樻槸鎵句笉鍒帮紝鏄剧ず鏈堜唤琛ュ～妗嗭紝绛夊緟鐢ㄦ埛杈撳叆
   if (satSunCols.length === 0) {
     const now = new Date();
     document.getElementById('inputYear').value = now.getFullYear();
@@ -1051,7 +939,7 @@ function parseExcel() {
     employees.push({name, id: String(row[1]||'').trim(), dept: String(row[2]||'').trim(), days});
   }
 
-  logMsg('ok', `日期列: ${dateHeaders.length}天${hasNextMonthCol ? ' + 下月1号列' : ''}, 周末列: ${satSunCols.length}个`);
+  logMsg('ok', `鏃ユ湡鍒? ${dateHeaders.length}澶?{hasNextMonthCol ? ' + 涓嬫湀1鍙峰垪' : ''}, 鍛ㄦ湯鍒? ${satSunCols.length}涓猔);
 }
 
 function logMsg(type, msg) {
@@ -1069,16 +957,16 @@ function setProgress(pct, label) {
   if (label) document.getElementById('progressLabel').textContent = label;
 }
 
-// 手动补填月份后，根据年月重新计算周末列
+// 鎵嬪姩琛ュ～鏈堜唤鍚庯紝鏍规嵁骞存湀閲嶆柊璁＄畻鍛ㄦ湯鍒?
 function applyManualMonth() {
   const year = parseInt(document.getElementById('inputYear').value);
   const month = parseInt(document.getElementById('inputMonth').value);
   if (!year || !month || month < 1 || month > 12) {
-    document.getElementById('monthPickerStatus').textContent = '请输入有效年月';
+    document.getElementById('monthPickerStatus').textContent = '璇疯緭鍏ユ湁鏁堝勾鏈?;
     document.getElementById('monthPickerStatus').style.color = '#ff4d4f';
     return;
   }
-  // 从dateHeaders中提取每天的日子（MM-DD格式），用指定年月计算星期
+  // 浠巇ateHeaders涓彁鍙栨瘡澶╃殑鏃ュ瓙锛圡M-DD鏍煎紡锛夛紝鐢ㄦ寚瀹氬勾鏈堣绠楁槦鏈?
   satSunCols = [];
   for (let i = 0; i < dateHeaders.length; i++) {
     const h = String(dateHeaders[i]);
@@ -1087,16 +975,16 @@ function applyManualMonth() {
       const day = parseInt(m[2]);
       try {
         const d = new Date(year, month - 1, day);
-        const dow = d.getDay(); // 0=周日, 6=周六
+        const dow = d.getDay(); // 0=鍛ㄦ棩, 6=鍛ㄥ叚
         if (dow === 0 || dow === 6) satSunCols.push(i);
       } catch(e) {}
     }
   }
   if (satSunCols.length > 0) {
-    document.getElementById('monthPickerStatus').textContent = `已识别 ${satSunCols.length} 个周末列`;
+    document.getElementById('monthPickerStatus').textContent = `宸茶瘑鍒?${satSunCols.length} 涓懆鏈垪`;
     document.getElementById('monthPickerStatus').style.color = '#52c41a';
   } else {
-    document.getElementById('monthPickerStatus').textContent = '未能识别周末列，请检查日期格式';
+    document.getElementById('monthPickerStatus').textContent = '鏈兘璇嗗埆鍛ㄦ湯鍒楋紝璇锋鏌ユ棩鏈熸牸寮?;
     document.getElementById('monthPickerStatus').style.color = '#ff4d4f';
   }
 }
@@ -1116,58 +1004,53 @@ function resetAll() {
 async function startProcess() {
   document.getElementById('btnProcess').disabled = true;
   document.getElementById('progressArea').classList.remove('hidden');
-  setProgress(0, '加载班次配置...');
+  setProgress(0, '寮€濮嬪鐞?..');
 
-  // 先加载config.json
-  const loaded = await loadConfig();
-  if (!loaded) {
-    document.getElementById('btnProcess').disabled = false;
-    logMsg('err', '无法加载班次配置，请检查config.json文件是否存在');
-    return;
-  }
+  // config.json 鍙€夛紙鏂扮増宸叉敼鐢ㄩ€氱敤鐝鍖归厤锛屼笉鍐嶅己渚濊禆锛?
+  loadConfig().catch(() => logMsg('warn', 'config.json 鏈姞杞斤紝浣跨敤绾€氱敤鐝鍖归厤'));
 
-  setProgress(0, '开始处理...');
+  setProgress(0, '寮€濮嬪鐞?..');
   empStats = [];
 
   const total = employees.length;
   for (let i = 0; i < total; i++) {
     if (i % 20 === 0) {
-      setProgress(Math.round(i/total*90), `处理第 ${i+1}/${total} 名员工...`);
+      setProgress(Math.round(i/total*90), `澶勭悊绗?${i+1}/${total} 鍚嶅憳宸?..`);
       await new Promise(r => setTimeout(r, 0));
     }
     empStats.push(processEmployee(employees[i]));
   }
 
-  setProgress(95, '生成预览...');
+  setProgress(95, '鐢熸垚棰勮...');
   await new Promise(r => setTimeout(r, 0));
   renderSummary();
   renderPreview();
-  setProgress(100, '处理完成！');
+  setProgress(100, '澶勭悊瀹屾垚锛?);
   document.getElementById('btnExport').disabled = false;
   document.getElementById('summaryCard').classList.remove('hidden');
   document.getElementById('previewCard').classList.remove('hidden');
-  logMsg('ok', `处理完成！共 ${total} 名员工`);
+  logMsg('ok', `澶勭悊瀹屾垚锛佸叡 ${total} 鍚嶅憳宸);
 }
 
 function processEmployee(emp) {
   const dept = emp.dept;
-  const isNoOt = dept.includes('保安') || dept.includes('卫生');
+  const isNoOt = dept.includes('淇濆畨') || dept.includes('鍗敓');
   const processedDays = preprocessCrossMidnight([...emp.days], dept);
 
   const stats = {
     name: emp.name, id: emp.id, dept,
-    平时出勤天数:0, 平时加班工时:0, 周末天数:0, 周末加班工时:0,
-    法定假日天数:0, 调休天数:0, 有薪天数:0,
-    迟到次数:0, 缺卡次数:0,
-    '0点':0,'1点':0,'2点':0,'3点':0,
-    '迟到1-10分':0,'迟到11-30分':0,'迟到31-59分':0,'迟到1小时以上':0,
-    加班总时长:0, 备注:'',
+    骞虫椂鍑哄嫟澶╂暟:0, 骞虫椂鍔犵彮宸ユ椂:0, 鍛ㄦ湯澶╂暟:0, 鍛ㄦ湯鍔犵彮宸ユ椂:0,
+    娉曞畾鍋囨棩澶╂暟:0, 璋冧紤澶╂暟:0, 鏈夎柂澶╂暟:0,
+    杩熷埌娆℃暟:0, 缂哄崱娆℃暟:0,
+    '0鐐?:0,'1鐐?:0,'2鐐?:0,'3鐐?:0,
+    '杩熷埌1-10鍒?:0,'杩熷埌11-30鍒?:0,'杩熷埌31-59鍒?:0,'杩熷埌1灏忔椂浠ヤ笂':0,
+    鍔犵彮鎬绘椂闀?0, 澶囨敞:'',
     overtimeDaily:[], isWeekendDaily:[], lateDaily:[], latePunchDaily:[], missingDaily:[], halfDayDaily:[],
-    processedDays,     // 计算用（含跨天凌晨卡归入前一天，可能含下月1号列）
-    rawDays: emp.days,  // 显示用（原始数据，可能含下月1号列）
+    processedDays,     // 璁＄畻鐢紙鍚法澶╁噷鏅ㄥ崱褰掑叆鍓嶄竴澶╋紝鍙兘鍚笅鏈?鍙峰垪锛?
+    rawDays: emp.days,  // 鏄剧ず鐢紙鍘熷鏁版嵁锛屽彲鑳藉惈涓嬫湀1鍙峰垪锛?
   };
 
-  // 只遍历 dateHeaders.length 天（不含下月1号）
+  // 鍙亶鍘?dateHeaders.length 澶╋紙涓嶅惈涓嬫湀1鍙凤級
   const dayLimit = dateHeaders.length;
   for (let dayIdx = 0; dayIdx < dayLimit; dayIdx++) {
     const timesStr = processedDays[dayIdx];
@@ -1184,16 +1067,16 @@ function processEmployee(emp) {
     }
     times = dedupTimes(times);
     const hdr = String(dateHeaders[dayIdx]||'');
-    const isWeekend = hdr.includes('周六') || hdr.includes('周日');
+    const isWeekend = hdr.includes('鍛ㄥ叚') || hdr.includes('鍛ㄦ棩');
     stats.isWeekendDaily.push(isWeekend);
 
-    // === 迟到判断 ===
+    // === 杩熷埌鍒ゆ柇 ===
     let late=false, latePunch=null, lateMin=0;
-    const midCutoff = (dept.includes('保安') || dept.includes('卫生')) ? 5 : 6;
+    const midCutoff = (dept.includes('淇濆畨') || dept.includes('鍗敓')) ? 5 : 6;
     const normalTimes = times.filter(t=>t.h>=midCutoff);
-    if (dept.includes('保安') || dept.includes('卫生')) {
-      if (dept.includes('保安')) {
-        // 保安组：早班06:30 / 晚班16:00
+    if (dept.includes('淇濆畨') || dept.includes('鍗敓')) {
+      if (dept.includes('淇濆畨')) {
+        // 淇濆畨缁勶細鏃╃彮06:30 / 鏅氱彮16:00
         const hasMorn = normalTimes.some(t=>t.h<12);
         const hasEve = normalTimes.some(t=>t.h>=15 && t.h<17);
         if (hasMorn) {
@@ -1211,7 +1094,7 @@ function processEmployee(emp) {
           }
         }
       } else {
-        // 卫生组：只有06:30-16:30早班
+        // 鍗敓缁勶細鍙湁06:30-16:30鏃╃彮
         const hasMorn = normalTimes.some(t=>t.h<12);
         if (hasMorn) {
           const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
@@ -1222,13 +1105,13 @@ function processEmployee(emp) {
         }
       }
     } else if (normalTimes.length) {
-      // 迟到判断：用班次匹配推断出的上班时间作为基准
-      // 班次匹配用四条件法（能上满→最接近→优先不迟到→卡型吻合），比部门最早start更精准
-      // 上7:58匹配到8:00班 → 不迟到；上7:48匹配到8:00班 → 不迟到
+      // 杩熷埌鍒ゆ柇锛氱敤鐝鍖归厤鎺ㄦ柇鍑虹殑涓婄彮鏃堕棿浣滀负鍩哄噯
+      // 鐝鍖归厤鐢ㄥ洓鏉′欢娉曪紙鑳戒笂婊♀啋鏈€鎺ヨ繎鈫掍紭鍏堜笉杩熷埌鈫掑崱鍨嬪惢鍚堬級锛屾瘮閮ㄩ棬鏈€鏃﹕tart鏇寸簿鍑?
+      // 涓?:58鍖归厤鍒?:00鐝?鈫?涓嶈繜鍒帮紱涓?:48鍖归厤鍒?:00鐝?鈫?涓嶈繜鍒?
       const hasMorn = normalTimes.some(t=>t.h<12);
       if (hasMorn) {
         const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
-        const shiftStart = getShiftStartFromDept(times, dept);
+        const shiftStart = getShiftStart(times, dept);
         if (timeToMin(first) > timeToMin(shiftStart)) {
           late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
           lateMin = timeToMin(first) - timeToMin(shiftStart);
@@ -1236,82 +1119,82 @@ function processEmployee(emp) {
       }
     }
     if (late) {
-      stats.迟到次数++;
-      if (lateMin>=1&&lateMin<=10) stats['迟到1-10分']++;
-      else if (lateMin<=30) stats['迟到11-30分']++;
-      else if (lateMin<=59) stats['迟到31-59分']++;
-      else stats['迟到1小时以上']++;
+      stats.杩熷埌娆℃暟++;
+      if (lateMin>=1&&lateMin<=10) stats['杩熷埌1-10鍒?]++;
+      else if (lateMin<=30) stats['杩熷埌11-30鍒?]++;
+      else if (lateMin<=59) stats['杩熷埌31-59鍒?]++;
+      else stats['杩熷埌1灏忔椂浠ヤ笂']++;
     }
     stats.lateDaily.push(late); stats.latePunchDaily.push(latePunch);
 
-    // === 出勤/加班 ===
+    // === 鍑哄嫟/鍔犵彮 ===
     const {attendanceDays, paidDays, overtimeHours, halfDay} = calcShiftAndOvertime(times, dept, dayIdx, processedDays);
-    if (isWeekend) { stats.周末天数 += attendanceDays; stats.周末加班工时 += overtimeHours; }
-    else { stats.平时出勤天数 += attendanceDays; stats.平时加班工时 += overtimeHours; }
+    if (isWeekend) { stats.鍛ㄦ湯澶╂暟 += attendanceDays; stats.鍛ㄦ湯鍔犵彮宸ユ椂 += overtimeHours; }
+    else { stats.骞虫椂鍑哄嫟澶╂暟 += attendanceDays; stats.骞虫椂鍔犵彮宸ユ椂 += overtimeHours; }
     stats.overtimeDaily.push(overtimeHours);
     stats.halfDayDaily.push(halfDay);
 
-    // 0-3点统计（所有人包括保安/卫生组）
+    // 0-3鐐圭粺璁★紙鎵€鏈変汉鍖呮嫭淇濆畨/鍗敓缁勶級
     if (times.length) {
       const last = times[times.length-1];
       if (last.h < 6) {
-        if (last.h===0) stats['0点']++; else if (last.h===1) stats['1点']++;
-        else if (last.h===2) stats['2点']++; else if (last.h===3) stats['3点']++;
+        if (last.h===0) stats['0鐐?]++; else if (last.h===1) stats['1鐐?]++;
+        else if (last.h===2) stats['2鐐?]++; else if (last.h===3) stats['3鐐?]++;
       }
     }
 
-    // 缺卡
+    // 缂哄崱
     const {count: mc, types: mt} = calcMissingCards(times, dept);
-    stats.缺卡次数 += mc;
+    stats.缂哄崱娆℃暟 += mc;
     stats.missingDaily.push(mt);
   }
 
-  stats.有薪天数 = stats.平时出勤天数 + stats.周末天数 + stats.法定假日天数 + stats.调休天数;
-  stats.加班总时长 = stats.平时加班工时 + stats.周末加班工时;
+  stats.鏈夎柂澶╂暟 = stats.骞虫椂鍑哄嫟澶╂暟 + stats.鍛ㄦ湯澶╂暟 + stats.娉曞畾鍋囨棩澶╂暟 + stats.璋冧紤澶╂暟;
+  stats.鍔犵彮鎬绘椂闀?= stats.骞虫椂鍔犵彮宸ユ椂 + stats.鍛ㄦ湯鍔犵彮宸ユ椂;
   return stats;
 }
 
 // ============================================================
-// 渲染摘要
+// 娓叉煋鎽樿
 // ============================================================
 function renderSummary() {
   const totalEmps = empStats.length;
-  const totalLate = empStats.reduce((s,e)=>s+e.迟到次数,0);
-  const totalMissing = empStats.reduce((s,e)=>s+e.缺卡次数,0);
-  const totalOt = empStats.reduce((s,e)=>s+e.加班总时长,0);
-  const totalAttend = empStats.reduce((s,e)=>s+e.平时出勤天数+e.周末天数,0);
+  const totalLate = empStats.reduce((s,e)=>s+e.杩熷埌娆℃暟,0);
+  const totalMissing = empStats.reduce((s,e)=>s+e.缂哄崱娆℃暟,0);
+  const totalOt = empStats.reduce((s,e)=>s+e.鍔犵彮鎬绘椂闀?0);
+  const totalAttend = empStats.reduce((s,e)=>s+e.骞虫椂鍑哄嫟澶╂暟+e.鍛ㄦ湯澶╂暟,0);
   const depts = new Set(empStats.map(e=>e.dept));
 
   document.getElementById('statsGrid').innerHTML = `
-    <div class="stat-card"><div class="num">${totalEmps}</div><div class="label">员工总数</div></div>
-    <div class="stat-card"><div class="num">${depts.size}</div><div class="label">部门数量</div></div>
-    <div class="stat-card"><div class="num">${totalAttend.toFixed(1)}</div><div class="label">总出勤天数</div></div>
-    <div class="stat-card"><div class="num red">${totalLate}</div><div class="label">迟到总次数</div></div>
-    <div class="stat-card"><div class="num red">${totalMissing}</div><div class="label">缺卡总次数</div></div>
-    <div class="stat-card"><div class="num">${totalOt.toFixed(1)}h</div><div class="label">加班总时长</div></div>
+    <div class="stat-card"><div class="num">${totalEmps}</div><div class="label">鍛樺伐鎬绘暟</div></div>
+    <div class="stat-card"><div class="num">${depts.size}</div><div class="label">閮ㄩ棬鏁伴噺</div></div>
+    <div class="stat-card"><div class="num">${totalAttend.toFixed(1)}</div><div class="label">鎬诲嚭鍕ゅぉ鏁?/div></div>
+    <div class="stat-card"><div class="num red">${totalLate}</div><div class="label">杩熷埌鎬绘鏁?/div></div>
+    <div class="stat-card"><div class="num red">${totalMissing}</div><div class="label">缂哄崱鎬绘鏁?/div></div>
+    <div class="stat-card"><div class="num">${totalOt.toFixed(1)}h</div><div class="label">鍔犵彮鎬绘椂闀?/div></div>
   `;
 }
 
 // ============================================================
-// 渲染预览表格
+// 娓叉煋棰勮琛ㄦ牸
 // ============================================================
 function renderPreview() {
   const preview = empStats.slice(0, 20);
   const dayCount = dateHeaders.length;
-  // 只显示前15个日期列，避免太宽
+  // 鍙樉绀哄墠15涓棩鏈熷垪锛岄伩鍏嶅お瀹?
   const showDays = Math.min(dayCount - 1, 15);
 
   let html = '<table><thead><tr>';
-  html += '<th>姓名</th><th>工号</th><th>部门</th>';
+  html += '<th>濮撳悕</th><th>宸ュ彿</th><th>閮ㄩ棬</th>';
   for (let i = 0; i < showDays; i++) {
     const isWe = satSunCols.includes(i);
     html += `<th class="${isWe?'orange-bg':''}">${String(dateHeaders[i]).replace(/\n/,'<br>')}</th>`;
   }
-  html += '<th>平时出勤</th><th>周末天数</th><th>有薪天数</th><th>迟到次数</th><th>缺卡次数</th><th>加班总时长</th>';
+  html += '<th>骞虫椂鍑哄嫟</th><th>鍛ㄦ湯澶╂暟</th><th>鏈夎柂澶╂暟</th><th>杩熷埌娆℃暟</th><th>缂哄崱娆℃暟</th><th>鍔犵彮鎬绘椂闀?/th>';
   html += '</tr></thead><tbody>';
 
   for (const st of preview) {
-    // 打卡行
+    // 鎵撳崱琛?
     html += `<tr><td rowspan="2">${st.name}</td><td rowspan="2">${st.id}</td><td rowspan="2">${st.dept}</td>`;
     for (let i = 0; i < showDays; i++) {
       const isWe = satSunCols.includes(i);
@@ -1320,35 +1203,35 @@ function renderPreview() {
       const latePunch = st.latePunchDaily[i];
       const halfDay = st.halfDayDaily[i];
       let lines = rawDay ? rawDay.split('\n') : [];
-      // 插入缺卡标记
+      // 鎻掑叆缂哄崱鏍囪
       const insertions = [];
       for (const mt of missing) {
-        if (mt==='morning_start') insertions.push({pos:0,label:'缺卡'});
-        else if (mt==='noon_end') { let p=lines.findIndex(l=>{ try{return parseInt(l.split(':')[0])>=13;}catch{return false;}}); if(p<0)p=lines.length; insertions.push({pos:p,label:'缺卡'}); }
-        else if (mt==='afternoon_start') { let p=lines.findIndex(l=>{try{const h=parseInt(l.split(':')[0]);return h>=17||l==='缺卡';}catch{return false;}}); if(p<0)p=lines.length; insertions.push({pos:p,label:'缺卡'}); }
-        else if (mt==='afternoon_end') { let p=lines.findIndex(l=>{try{const h=parseInt(l.split(':')[0]);return h>=18||l==='缺卡';}catch{return false;}}); if(p<0)p=lines.length; insertions.push({pos:p,label:'缺卡'}); }
-        else insertions.push({pos:lines.length, label:'缺卡'});
+        if (mt==='morning_start') insertions.push({pos:0,label:'缂哄崱'});
+        else if (mt==='noon_end') { let p=lines.findIndex(l=>{ try{return parseInt(l.split(':')[0])>=13;}catch{return false;}}); if(p<0)p=lines.length; insertions.push({pos:p,label:'缂哄崱'}); }
+        else if (mt==='afternoon_start') { let p=lines.findIndex(l=>{try{const h=parseInt(l.split(':')[0]);return h>=17||l==='缂哄崱';}catch{return false;}}); if(p<0)p=lines.length; insertions.push({pos:p,label:'缂哄崱'}); }
+        else if (mt==='afternoon_end') { let p=lines.findIndex(l=>{try{const h=parseInt(l.split(':')[0]);return h>=18||l==='缂哄崱';}catch{return false;}}); if(p<0)p=lines.length; insertions.push({pos:p,label:'缂哄崱'}); }
+        else insertions.push({pos:lines.length, label:'缂哄崱'});
       }
       insertions.sort((a,b)=>b.pos-a.pos);
-      for (const ins of insertions) lines.splice(ins.pos,0,'缺卡');
-      // 插入半天标记
+      for (const ins of insertions) lines.splice(ins.pos,0,'缂哄崱');
+      // 鎻掑叆鍗婂ぉ鏍囪
       if (halfDay) {
-        let firstCardLine = lines.find(l => l !== '缺卡');
+        let firstCardLine = lines.find(l => l !== '缂哄崱');
         let firstCardHour = 12;
         if (firstCardLine) { try { firstCardHour = parseInt(firstCardLine.split(':')[0]); } catch(e) {} }
-        if (firstCardHour < 12) lines.push('半天');
-        else lines.unshift('半天');
+        if (firstCardHour < 12) lines.push('鍗婂ぉ');
+        else lines.unshift('鍗婂ぉ');
       }
-      const cellHtml = lines.map(l=> l==='缺卡' ? `<span class="red">缺卡</span>` : l==='半天' ? `<span class="red">半天</span>` : (l===latePunch ? `<span class="red">${l}</span>` : l)).join('<br>');
+      const cellHtml = lines.map(l=> l==='缂哄崱' ? `<span class="red">缂哄崱</span>` : l==='鍗婂ぉ' ? `<span class="red">鍗婂ぉ</span>` : (l===latePunch ? `<span class="red">${l}</span>` : l)).join('<br>');
       html += `<td class="punch-cell ${isWe?'orange-bg':''}">${cellHtml}</td>`;
     }
-    // 统计列（rowspan=2）
-    html += `<td rowspan="2">${st.平时出勤天数}</td><td rowspan="2">${st.周末天数}</td><td rowspan="2">${st.有薪天数}</td>`;
-    html += `<td rowspan="2" class="${st.迟到次数>0?'red':''}">${st.迟到次数}</td>`;
-    html += `<td rowspan="2" class="${st.缺卡次数>0?'red':''}">${st.缺卡次数}</td>`;
-    html += `<td rowspan="2" class="${st.加班总时长>0?'red':''}">${st.加班总时长||''}</td>`;
+    // 缁熻鍒楋紙rowspan=2锛?
+    html += `<td rowspan="2">${st.骞虫椂鍑哄嫟澶╂暟}</td><td rowspan="2">${st.鍛ㄦ湯澶╂暟}</td><td rowspan="2">${st.鏈夎柂澶╂暟}</td>`;
+    html += `<td rowspan="2" class="${st.杩熷埌娆℃暟>0?'red':''}">${st.杩熷埌娆℃暟}</td>`;
+    html += `<td rowspan="2" class="${st.缂哄崱娆℃暟>0?'red':''}">${st.缂哄崱娆℃暟}</td>`;
+    html += `<td rowspan="2" class="${st.鍔犵彮鎬绘椂闀?0?'red':''}">${st.鍔犵彮鎬绘椂闀縷|''}</td>`;
     html += '</tr>';
-    // 加班行
+    // 鍔犵彮琛?
     html += '<tr>';
     for (let i = 0; i < showDays; i++) {
       const isWe = satSunCols.includes(i);
@@ -1362,67 +1245,67 @@ function renderPreview() {
 }
 
 // ============================================================
-// 导出 Excel（ExcelJS — 完整格式）
+// 瀵煎嚭 Excel锛圗xcelJS 鈥?瀹屾暣鏍煎紡锛?
 // ============================================================
 
 function buildCellText(processedDay, missingTypes, latePunch, halfDay) {
-  // 构建打卡文本，插入缺卡标记，返回 rich text segments
+  // 鏋勫缓鎵撳崱鏂囨湰锛屾彃鍏ョ己鍗℃爣璁帮紝杩斿洖 rich text segments
   let lines = processedDay ? processedDay.split('\n') : [];
 
-  // 插入缺卡标记
+  // 鎻掑叆缂哄崱鏍囪
   if (missingTypes && missingTypes.length) {
     const insertions = [];
     for (const mt of missingTypes) {
       if (mt === 'morning_start') {
-        insertions.push({ pos: 0, label: '缺卡' });
+        insertions.push({ pos: 0, label: '缂哄崱' });
       } else if (mt === 'noon_end') {
         let p = lines.findIndex(l => { try { return parseInt(l.split(':')[0]) >= 13; } catch(e) { return false; } });
         if (p < 0) p = lines.length;
-        insertions.push({ pos: p, label: '缺卡' });
+        insertions.push({ pos: p, label: '缂哄崱' });
       } else if (mt === 'afternoon_start') {
-        // 找第一个下午时段(>=13:00)的卡前面插入，表示缺的是下午上班卡
-        let p = lines.findIndex(l => { try { const h = parseInt(l.split(':')[0]); return h >= 13 || l === '缺卡'; } catch(e) { return false; } });
+        // 鎵剧涓€涓笅鍗堟椂娈?>=13:00)鐨勫崱鍓嶉潰鎻掑叆锛岃〃绀虹己鐨勬槸涓嬪崍涓婄彮鍗?
+        let p = lines.findIndex(l => { try { const h = parseInt(l.split(':')[0]); return h >= 13 || l === '缂哄崱'; } catch(e) { return false; } });
         if (p < 0) p = lines.length;
-        insertions.push({ pos: p, label: '缺卡' });
+        insertions.push({ pos: p, label: '缂哄崱' });
       } else if (mt === 'afternoon_end') {
-        let p = lines.findIndex(l => { try { const h = parseInt(l.split(':')[0]); return h >= 18 || l === '缺卡'; } catch(e) { return false; } });
+        let p = lines.findIndex(l => { try { const h = parseInt(l.split(':')[0]); return h >= 18 || l === '缂哄崱'; } catch(e) { return false; } });
         if (p < 0) p = lines.length;
-        insertions.push({ pos: p, label: '缺卡' });
+        insertions.push({ pos: p, label: '缂哄崱' });
       } else {
-        insertions.push({ pos: lines.length, label: '缺卡' });
+        insertions.push({ pos: lines.length, label: '缂哄崱' });
       }
     }
     insertions.sort((a, b) => b.pos - a.pos);
-    for (const ins of insertions) lines.splice(ins.pos, 0, '缺卡');
+    for (const ins of insertions) lines.splice(ins.pos, 0, '缂哄崱');
   }
 
-  // 插入半天标记
+  // 鎻掑叆鍗婂ぉ鏍囪
   if (halfDay) {
-    // 判断第一条实际打卡时间（排除"缺卡"标记）属于上午还是下午
-    // 找第一条非"缺卡"的行
-    let firstCardLine = lines.find(l => l !== '缺卡');
-    let firstCardHour = 12; // 默认下午
+    // 鍒ゆ柇绗竴鏉″疄闄呮墦鍗℃椂闂达紙鎺掗櫎"缂哄崱"鏍囪锛夊睘浜庝笂鍗堣繕鏄笅鍗?
+    // 鎵剧涓€鏉￠潪"缂哄崱"鐨勮
+    let firstCardLine = lines.find(l => l !== '缂哄崱');
+    let firstCardHour = 12; // 榛樿涓嬪崍
     if (firstCardLine) {
       try { firstCardHour = parseInt(firstCardLine.split(':')[0]); } catch(e) {}
     }
     if (firstCardHour < 12) {
-      // 上午卡在前 → 半天放在最后
-      lines.push('半天');
+      // 涓婂崍鍗″湪鍓?鈫?鍗婂ぉ鏀惧湪鏈€鍚?
+      lines.push('鍗婂ぉ');
     } else {
-      // 下午卡在前 → 半天放在最前
-      lines.unshift('半天');
+      // 涓嬪崍鍗″湪鍓?鈫?鍗婂ぉ鏀惧湪鏈€鍓?
+      lines.unshift('鍗婂ぉ');
     }
   }
 
-  // 构建 rich text: [{text, color}]
+  // 鏋勫缓 rich text: [{text, color}]
   const segments = [];
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
     if (i > 0) segments.push({ text: '\n', color: '000000' });
-    if (l === '缺卡') {
-      segments.push({ text: '缺卡', color: 'FF0000' });
-    } else if (l === '半天') {
-      segments.push({ text: '半天', color: 'FF0000' });
+    if (l === '缂哄崱') {
+      segments.push({ text: '缂哄崱', color: 'FF0000' });
+    } else if (l === '鍗婂ぉ') {
+      segments.push({ text: '鍗婂ぉ', color: 'FF0000' });
     } else if (l === latePunch) {
       segments.push({ text: l, color: 'FF0000' });
     } else {
@@ -1432,7 +1315,7 @@ function buildCellText(processedDay, missingTypes, latePunch, halfDay) {
   return segments;
 }
 
-// 禁用Excel自动调整行高（防止打开后自动改变行高列宽）
+// 绂佺敤Excel鑷姩璋冩暣琛岄珮锛堥槻姝㈡墦寮€鍚庤嚜鍔ㄦ敼鍙樿楂樺垪瀹斤級
 const JSZIP_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
 
 async function fixRowHeights(xlsxBuffer) {
@@ -1455,37 +1338,37 @@ async function fixRowHeights(xlsxBuffer) {
 }
 
 async function exportExcel() {
-  logMsg('ok', '开始生成Excel（完整格式）...');
+  logMsg('ok', '寮€濮嬬敓鎴怑xcel锛堝畬鏁存牸寮忥級...');
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = '考勤记录处理工具';
+  wb.creator = '鑰冨嫟璁板綍澶勭悊宸ュ叿';
   wb.created = new Date();
 
-  const ws = wb.addWorksheet('考勤记录', {
+  const ws = wb.addWorksheet('鑰冨嫟璁板綍', {
     properties: { defaultRowHeight: 18 }
   });
 
-  const NEW_COLS = ['平时','周末','共计','平时出勤天数','平时加班工时','周末天数','周末加班工时',
-    '法定假日天数','调休天数','有薪天数','迟到次数','缺卡次数','0点','1点','2点','3点',
-    '迟到1-10分','迟到11-30分','迟到31-59分','迟到1小时以上','加班总时长','备注','签名确认'];
+  const NEW_COLS = ['骞虫椂','鍛ㄦ湯','鍏辫','骞虫椂鍑哄嫟澶╂暟','骞虫椂鍔犵彮宸ユ椂','鍛ㄦ湯澶╂暟','鍛ㄦ湯鍔犵彮宸ユ椂',
+    '娉曞畾鍋囨棩澶╂暟','璋冧紤澶╂暟','鏈夎柂澶╂暟','杩熷埌娆℃暟','缂哄崱娆℃暟','0鐐?,'1鐐?,'2鐐?,'3鐐?,
+    '杩熷埌1-10鍒?,'杩熷埌11-30鍒?,'杩熷埌31-59鍒?,'杩熷埌1灏忔椂浠ヤ笂','鍔犵彮鎬绘椂闀?,'澶囨敞','绛惧悕纭'];
 
-  const dayCount = dateHeaders.length; // 不含下月1号
+  const dayCount = dateHeaders.length; // 涓嶅惈涓嬫湀1鍙?
   const totalCols = 3 + dayCount + NEW_COLS.length;
 
-  // ---- 列宽（对照Python版） ----
-  ws.getColumn(1).width = 10;   // 姓名
-  ws.getColumn(2).width = 12;   // 工号
-  ws.getColumn(3).width = 12;   // 部门
+  // ---- 鍒楀锛堝鐓ython鐗堬級 ----
+  ws.getColumn(1).width = 10;   // 濮撳悕
+  ws.getColumn(2).width = 12;   // 宸ュ彿
+  ws.getColumn(3).width = 12;   // 閮ㄩ棬
   for (let i = 0; i < dayCount; i++) ws.getColumn(4 + i).width = 7;
   for (let i = 0; i < NEW_COLS.length; i++) {
-    if (i === 19) ws.getColumn(4 + dayCount + i).width = 25;  // 加班总时长
+    if (i === 19) ws.getColumn(4 + dayCount + i).width = 25;  // 鍔犵彮鎬绘椂闀?
     else ws.getColumn(4 + dayCount + i).width = 8;
   }
 
-  // ---- 冻结窗格 ----
+  // ---- 鍐荤粨绐楁牸 ----
   ws.views = [{ state: 'frozen', ySplit: 1, xSplit: 3, topLeftCell: 'D2', activeCell: 'A1' }];
 
-  // ---- 样式定义（对照Python版 make_attendance_D4_march.py） ----
+  // ---- 鏍峰紡瀹氫箟锛堝鐓ython鐗?make_attendance_D4_march.py锛?----
   const thinBorder = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
@@ -1494,55 +1377,55 @@ async function exportExcel() {
   };
   const centerAlign = { vertical: 'middle', horizontal: 'center', wrapText: true };
 
-  // 周末橙色（对照Python版 FFC000）
+  // 鍛ㄦ湯姗欒壊锛堝鐓ython鐗?FFC000锛?
   const orangeFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFC000' } };
-  // 表头灰色背景（对照Python版 646A73，从原始考勤表继承）
+  // 琛ㄥご鐏拌壊鑳屾櫙锛堝鐓ython鐗?646A73锛屼粠鍘熷鑰冨嫟琛ㄧ户鎵匡級
   const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF646A73' } };
-  // 表头字体：宋体12号白色（Python版从原始考勤表继承，不加粗）
-  const headerFont = { name: '宋体', size: 12, bold: false, color: { argb: 'FFFFFFFF' } };
-  // 数据行字体：宋体12号（Python版 NORMAL_FONT = Font(size=12)，不指定name即默认宋体）
-  const normalFont = { name: '宋体', size: 12, color: { argb: 'FF000000' } };
-  const redFont = { name: '宋体', size: 12, color: { argb: 'FFFF0000' } };
-  const redBoldFont = { name: '宋体', size: 12, color: { argb: 'FFFF0000' } };
-  const richTextBlackFont = { name: '宋体', size: 12, color: { argb: 'FF000000' } };
-  const richTextRedFont = { name: '宋体', size: 12, color: { argb: 'FFFF0000' } };
+  // 琛ㄥご瀛椾綋锛氬畫浣?2鍙风櫧鑹诧紙Python鐗堜粠鍘熷鑰冨嫟琛ㄧ户鎵匡紝涓嶅姞绮楋級
+  const headerFont = { name: '瀹嬩綋', size: 12, bold: false, color: { argb: 'FFFFFFFF' } };
+  // 鏁版嵁琛屽瓧浣擄細瀹嬩綋12鍙凤紙Python鐗?NORMAL_FONT = Font(size=12)锛屼笉鎸囧畾name鍗抽粯璁ゅ畫浣擄級
+  const normalFont = { name: '瀹嬩綋', size: 12, color: { argb: 'FF000000' } };
+  const redFont = { name: '瀹嬩綋', size: 12, color: { argb: 'FFFF0000' } };
+  const redBoldFont = { name: '瀹嬩綋', size: 12, color: { argb: 'FFFF0000' } };
+  const richTextBlackFont = { name: '瀹嬩綋', size: 12, color: { argb: 'FF000000' } };
+  const richTextRedFont = { name: '瀹嬩綋', size: 12, color: { argb: 'FFFF0000' } };
 
-  // ---- 第1行：表头 ----
+  // ---- 绗?琛岋細琛ㄥご ----
   const headerRow = ws.getRow(1);
   headerRow.height = 30;
-  headerRow.values = ['姓名', '工号', '部门', ...dateHeaders.map(h => String(h)), ...NEW_COLS];
+  headerRow.values = ['濮撳悕', '宸ュ彿', '閮ㄩ棬', ...dateHeaders.map(h => String(h)), ...NEW_COLS];
   headerRow.eachCell({ includeEmpty: true }, (cell, colNum) => {
     cell.font = headerFont;
     cell.alignment = centerAlign;
     cell.border = thinBorder;
     cell.fill = headerFill;
   });
-  // 周末列橙色（覆盖深灰）
+  // 鍛ㄦ湯鍒楁鑹诧紙瑕嗙洊娣辩伆锛?
   for (const idx of satSunCols) {
     const c = headerRow.getCell(4 + idx);
     c.fill = orangeFill;
   }
 
-  // ---- 数据行 ----
+  // ---- 鏁版嵁琛?----
   let excelRow = 2;
   for (const st of empStats) {
     const rowA_Num = excelRow;
     const rowB_Num = excelRow + 1;
 
-    // === Row A: 打卡时间 ===
+    // === Row A: 鎵撳崱鏃堕棿 ===
   const rowA = ws.getRow(rowA_Num);
   rowA.height = 130;
 
-    // 前三列（rowA+B合并）
+    // 鍓嶄笁鍒楋紙rowA+B鍚堝苟锛?
     rowA.getCell(1).value = st.name;
     rowA.getCell(2).value = st.id;
     rowA.getCell(3).value = st.dept;
 
-    // 每日打卡列（用原始数据 rawDays，只导出 dateHeaders.length 天，不含下月1号）
+    // 姣忔棩鎵撳崱鍒楋紙鐢ㄥ師濮嬫暟鎹?rawDays锛屽彧瀵煎嚭 dateHeaders.length 澶╋紝涓嶅惈涓嬫湀1鍙凤級
     for (let i = 0; i < dateHeaders.length; i++) {
       const segments = buildCellText(st.rawDays[i] || '', st.missingDaily[i], st.latePunchDaily[i], st.halfDayDaily[i]);
       const cell = rowA.getCell(4 + i);
-      // 用 rich text，全部宋体12号
+      // 鐢?rich text锛屽叏閮ㄥ畫浣?2鍙?
       const richParts = segments.map(seg => ({
         text: seg.text,
         font: seg.color === 'FF0000' ? { ...richTextRedFont } : { ...richTextBlackFont }
@@ -1551,52 +1434,52 @@ async function exportExcel() {
       cell.alignment = centerAlign;
     }
 
-    // 平时/周末/共计 → RowA 留空（RowB写公式）
-    const sumColStart = 4 + dayCount; // AJ列开始
+    // 骞虫椂/鍛ㄦ湯/鍏辫 鈫?RowA 鐣欑┖锛圧owB鍐欏叕寮忥級
+    const sumColStart = 4 + dayCount; // AJ鍒楀紑濮?
     rowA.getCell(sumColStart).value = '';
     rowA.getCell(sumColStart + 1).value = '';
     rowA.getCell(sumColStart + 2).value = '';
 
-    // 后20列统计（RowA）
-    // 平时加班工时和周末加班工时：RowA写公式引用平时/周末列，然后合并
+    // 鍚?0鍒楃粺璁★紙RowA锛?
+    // 骞虫椂鍔犵彮宸ユ椂鍜屽懆鏈姞鐝伐鏃讹細RowA鍐欏叕寮忓紩鐢ㄥ钩鏃?鍛ㄦ湯鍒楋紝鐒跺悗鍚堝苟
     const colLetter = (n) => {
       let s = '';
       let t = n;
       while (t > 0) { t--; s = String.fromCharCode(65 + (t % 26)) + s; t = Math.floor(t / 26); }
       return s;
     };
-    const pingCol = colLetter(sumColStart);       // 平时列
-    const zhouCol = colLetter(sumColStart + 1); // 周末列
+    const pingCol = colLetter(sumColStart);       // 骞虫椂鍒?
+    const zhouCol = colLetter(sumColStart + 1); // 鍛ㄦ湯鍒?
     const statRowA_Values = [
-      st.平时出勤天数, {formula:`=${pingCol}${rowA_Num}`}, st.周末天数, {formula:`=${zhouCol}${rowA_Num}`},
-      st.法定假日天数, st.调休天数, st.有薪天数,
-      st.迟到次数 || '', st.缺卡次数 || '',
-      st['0点'] || '', st['1点'] || '', st['2点'] || '', st['3点'] || '',
-      st['迟到1-10分'] || '', st['迟到11-30分'] || '', st['迟到31-59分'] || '', st['迟到1小时以上'] || '',
-      st.加班总时长 || '', st.备注 || '', ''
+      st.骞虫椂鍑哄嫟澶╂暟, {formula:`=${pingCol}${rowA_Num}`}, st.鍛ㄦ湯澶╂暟, {formula:`=${zhouCol}${rowA_Num}`},
+      st.娉曞畾鍋囨棩澶╂暟, st.璋冧紤澶╂暟, st.鏈夎柂澶╂暟,
+      st.杩熷埌娆℃暟 || '', st.缂哄崱娆℃暟 || '',
+      st['0鐐?] || '', st['1鐐?] || '', st['2鐐?] || '', st['3鐐?] || '',
+      st['杩熷埌1-10鍒?] || '', st['杩熷埌11-30鍒?] || '', st['杩熷埌31-59鍒?] || '', st['杩熷埌1灏忔椂浠ヤ笂'] || '',
+      st.鍔犵彮鎬绘椂闀?|| '', st.澶囨敞 || '', ''
     ];
     for (let i = 0; i < statRowA_Values.length; i++) {
       rowA.getCell(sumColStart + 3 + i).value = statRowA_Values[i];
     }
 
-    // RowA 样式
+    // RowA 鏍峰紡
     rowA.eachCell({ includeEmpty: true }, (cell, colNum) => {
       cell.border = thinBorder;
       cell.alignment = centerAlign;
-      // richText cell 的字体由内部 segments 控制，不覆盖
+      // richText cell 鐨勫瓧浣撶敱鍐呴儴 segments 鎺у埗锛屼笉瑕嗙洊
       if (!cell.value || typeof cell.value !== 'object' || !cell.value.richText) {
-        if (!cell.font || !cell.font.name || cell.font.name !== '宋体') {
+        if (!cell.font || !cell.font.name || cell.font.name !== '瀹嬩綋') {
           cell.font = normalFont;
         }
       }
     });
 
-    // === Row B: 加班时长 ===
+    // === Row B: 鍔犵彮鏃堕暱 ===
     const rowB = ws.getRow(rowB_Num);
     rowB.height = 20;
 
-    // 前三列留空（合并）
-    // 每日加班列
+    // 鍓嶄笁鍒楃暀绌猴紙鍚堝苟锛?
+    // 姣忔棩鍔犵彮鍒?
     for (let i = 0; i < st.overtimeDaily.length; i++) {
       const ot = st.overtimeDaily[i];
       const cell = rowB.getCell(4 + i);
@@ -1609,7 +1492,7 @@ async function exportExcel() {
       cell.alignment = centerAlign;
     }
 
-    // 找出工作日和周末的列号（dateHeaders已不含下月1号，所有列都参与统计）
+    // 鎵惧嚭宸ヤ綔鏃ュ拰鍛ㄦ湯鐨勫垪鍙凤紙dateHeaders宸蹭笉鍚笅鏈?鍙凤紝鎵€鏈夊垪閮藉弬涓庣粺璁★級
     const weekdayCols = [], weekendCols = [];
     for (let i = 0; i < dayCount; i++) {
       const cl = colLetter(4 + i);
@@ -1617,7 +1500,7 @@ async function exportExcel() {
       else weekdayCols.push(cl);
     }
 
-    // 平时 = SUMIF rowA 是工作日
+    // 骞虫椂 = SUMIF rowA 鏄伐浣滄棩
     const weekdaySum = weekdayCols.length ? weekdayCols.map(c => c + rowB_Num).join(',') : '';
     rowB.getCell(sumColStart).value = weekdaySum ? { formula: `SUM(${weekdaySum})` } : 0;
     rowB.getCell(sumColStart).font = redBoldFont;
@@ -1629,32 +1512,32 @@ async function exportExcel() {
     rowB.getCell(sumColStart + 2).value = { formula: `=${pingCol}${rowB_Num}+${zhouCol}${rowB_Num}` };
     rowB.getCell(sumColStart + 2).font = redBoldFont;
 
-    // 后20列留空（平时加班工时和周末加班工时的公式已写在RowA，合并后显示RowA的值）
+    // 鍚?0鍒楃暀绌猴紙骞虫椂鍔犵彮宸ユ椂鍜屽懆鏈姞鐝伐鏃剁殑鍏紡宸插啓鍦≧owA锛屽悎骞跺悗鏄剧ずRowA鐨勫€硷級
     for (let i = 0; i < 20; i++) {
       rowB.getCell(sumColStart + 3 + i).value = '';
     }
 
-    // RowB 样式
+    // RowB 鏍峰紡
     rowB.eachCell({ includeEmpty: true }, (cell, colNum) => {
       cell.border = thinBorder;
       cell.alignment = centerAlign;
-      if (!cell.font || !cell.font.name || cell.font.name !== '宋体') {
+      if (!cell.font || !cell.font.name || cell.font.name !== '瀹嬩綋') {
         cell.font = normalFont;
       }
     });
 
-    // 周末列橙色（两行都加）
+    // 鍛ㄦ湯鍒楁鑹诧紙涓よ閮藉姞锛?
     for (const idx of satSunCols) {
       rowA.getCell(4 + idx).fill = orangeFill;
       rowB.getCell(4 + idx).fill = orangeFill;
     }
 
-    // === 合并单元格：姓名/工号/部门 ===
+    // === 鍚堝苟鍗曞厓鏍硷細濮撳悕/宸ュ彿/閮ㄩ棬 ===
     for (let col = 1; col <= 3; col++) {
       ws.mergeCells(rowA_Num, col, rowB_Num, col);
     }
 
-    // === RowA 统计列合并（全部合并，公式写在RowA上） ===
+    // === RowA 缁熻鍒楀悎骞讹紙鍏ㄩ儴鍚堝苟锛屽叕寮忓啓鍦≧owA涓婏級 ===
     for (let i = 0; i < statRowA_Values.length; i++) {
       ws.mergeCells(rowA_Num, sumColStart + 3 + i, rowB_Num, sumColStart + 3 + i);
     }
@@ -1662,18 +1545,18 @@ async function exportExcel() {
     excelRow += 2;
   }
 
-  // ---- 生成文件 ----
+  // ---- 鐢熸垚鏂囦欢 ----
   let buffer = await wb.xlsx.writeBuffer();
 
-  // 修改xlsx zip中的sheet1.xml，给所有行加上 customHeight="1" autoFitHeight="0"
-  // 这样Excel打开后不会自动调整行高
+  // 淇敼xlsx zip涓殑sheet1.xml锛岀粰鎵€鏈夎鍔犱笂 customHeight="1" autoFitHeight="0"
+  // 杩欐牱Excel鎵撳紑鍚庝笉浼氳嚜鍔ㄨ皟鏁磋楂?
   buffer = await fixRowHeights(buffer);
 
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const now = new Date();
-  const fname = `考勤记录表_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`;
+  const fname = `鑰冨嫟璁板綍琛╛${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`;
   saveAs(blob, fname);
-  logMsg('ok', `已导出：${fname}`);
+  logMsg('ok', `宸插鍑猴細${fname}`);
 }
 </script>
 </body>
