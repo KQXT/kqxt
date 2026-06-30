@@ -165,17 +165,11 @@ async function loadConfig() {
 // 通用班次模板（用于部门无配置或班次不全时的自动推断）
 // ============================================================
 const UNIVERSAL_SHIFTS = [
-  {start:'06:30', end:'16:00', net_h:8},
-  {start:'07:00', end:'16:30', net_h:8},
-  {start:'07:30', end:'17:00', net_h:8},
-  {start:'08:00', end:'17:30', net_h:8},
-  {start:'09:00', end:'19:00', net_h:8},
-  {start:'10:00', end:'20:00', net_h:8},
-  {start:'13:30', end:'22:00', net_h:8},
-  {start:'15:00', end:'23:30', net_h:8},
-  {start:'15:30', end:'00:00', net_h:8},
-  {start:'08:00', end:'12:00', net_h:4},
-  {start:'13:30', end:'17:30', net_h:4},
+  {start:'06:30', end:'12:00', net_h:5.5},
+  {start:'13:30', end:'16:00', net_h:2.5},
+  {start:'15:30', end:'17:30', net_h:2},
+  {start:'18:00', end:'00:00', net_h:6},
+  {start:'08:00', end:'17:30', net_h:8},  // 兜底全天
 ];
 
 // ============================================================
@@ -223,13 +217,11 @@ function dedupTimes(times) {
 }
 
 // ============================================================
-// 新版班次匹配：双端距离打分法（2026-06-30）
-// 对所有11个通用班次打分，取总分最低的
-// 上班分 = |第一张有效卡 - 班次上班|，迟到 ×1.8
-// 下班分 = |最后一张有效卡 - 班次下班|
-// 预过滤：有noon卡无morning卡 → 排除纯下午班次
+// 班次匹配：部门优先 + 通用fallback（V2回退版 2026-07-01）
+// 第1层：用 DEPT_SHIFTS[dept] 部门班次做双端距离打分
+// 第2层（部门匹配太离谱时）：用 UNIVERSAL_SHIFTS 通用班次
 // ============================================================
-function matchShift(times) {
+function matchShift(times, dept) {
   const normal = times.filter(t => t.h >= 6);
   if (!normal.length) return null;
 
@@ -247,8 +239,6 @@ function matchShift(times) {
   const firstMin = timeToMin(firstPunch);
 
   // ── 最后一张有效卡 ──
-  // ★ 优先用正常下班卡（afternoon_end），加班卡不参与班次匹配
-  // 加班是超时行为，不应误导班次判断（如08:00班加班到20:06不应被误判为09:00班）
   const midnight = times.filter(t => t.h < 6);
   let lastPunch;
   if (cls.afternoon_end.length) lastPunch = cls.afternoon_end[cls.afternoon_end.length - 1];
@@ -261,42 +251,63 @@ function matchShift(times) {
   let lastMin = timeToMin(lastPunch);
   if (lastPunch.h < 6) lastMin += 1440;
 
-  let bestShift = null, bestScore = Infinity;
+  // ── 打分辅助：对一批shifts逐一打分，返回{shift, mScore, eScore} ──
+  function scoreCandidates(shifts) {
+    let best = null, bestScore = Infinity, bestM = 0, bestE = 0;
+    for (const shift of shifts) {
+      const sStart = parseShiftTime(shift.start);
+      let sEnd = parseShiftTime(shift.end);
+      const netH = shift.net_h || 8;
 
-  for (const shift of UNIVERSAL_SHIFTS) {
-    const sStart = parseShiftTime(shift.start);
-    let sEnd = parseShiftTime(shift.end);
-    const netH = shift.net_h || 8;
+      // 预过滤
+      if (sStart >= 15 * 60 && netH >= 8 && hasMorn) continue;
+      if (sEnd <= 12 * 60 && hasAf) continue;
+      if (sStart >= 13 * 60 && netH < 5 && hasMorn) continue;
+      if (hasNoon && !hasMorn && sStart >= 13 * 60) continue;
+      if (sStart < 12 * 60 && !hasMorn && firstMin >= 13 * 60) continue;
 
-    // ── 预过滤 ──
-    // 晚班(start>=15:00, 全天)：有上午卡就排除
-    if (sStart >= 15 * 60 && netH >= 8 && hasMorn) continue;
-    // 上午半天：有下午卡排除
-    if (sEnd <= 12 * 60 && hasAf) continue;
-    // 下午半天：有上午卡排除
-    if (sStart >= 13 * 60 && netH < 5 && hasMorn) continue;
-    // 有noon卡无morning卡：排除纯下午班次（noon卡说明上午来过）
-    if (hasNoon && !hasMorn && sStart >= 13 * 60) continue;
-    // 第一张卡>=13:00且无morning卡：排除上午班次
-    if (sStart < 12 * 60 && !hasMorn && firstMin >= 13 * 60) continue;
+      // 上班分
+      let mScore = Math.abs(firstMin - sStart);
+      if (firstMin > sStart) mScore *= 1.8;
 
-    // ── 上班分：距离 × 迟到惩罚 ──
-    let mScore = Math.abs(firstMin - sStart);
-    if (firstMin > sStart) mScore *= 1.8;
+      // 下班分
+      let effEnd = sEnd;
+      if (effEnd <= 30 && lastMin > sStart) effEnd += 1440;
+      let eScore = Math.abs(lastMin - effEnd);
 
-    // ── 下班分 ──
-    let effEnd = sEnd;
-    if (effEnd <= 30 && lastMin > sStart) effEnd += 1440; // 跨天
-    let eScore = Math.abs(lastMin - effEnd);
+      // 半天班加成
+      if (sEnd <= 12 * 60 && !hasAf && hasMorn) eScore *= 0.3;
+      if (sStart >= 13 * 60 && netH < 5 && !hasMorn && hasAf) mScore *= 0.3;
 
-    // ── 半天班加成 ──
-    if (sEnd <= 12 * 60 && !hasAf && hasMorn) eScore *= 0.3;
-    if (sStart >= 13 * 60 && netH < 5 && !hasMorn && hasAf) mScore *= 0.3;
-
-    const total = mScore + eScore;
-    if (total < bestScore) { bestScore = total; bestShift = shift; }
+      const total = mScore + eScore;
+      if (total < bestScore) { bestScore = total; best = shift; bestM = mScore; bestE = eScore; }
+    }
+    return {shift: best, mScore: bestM, eScore: bestE};
   }
-  return bestShift;
+
+  // ── 离谱检查 ──
+  function isTooFar(shift, mScore, eScore) {
+    if (!shift) return true;
+    const netH = shift.net_h || 8;
+    if (mScore > 120) return true;   // 上班差距 > 2h
+    if (eScore > 180) return true;   // 下班差距 > 3h
+    if (netH >= 8 && !(hasMorn && hasAf)) return true;  // 全天班但只有半天卡
+    if (netH <= 5 && hasMorn && hasAf) return true;      // 半天班但上下都有卡
+    return false;
+  }
+
+  // ── 第1层：部门班次匹配 ──
+  const deptShifts = (dept && DEPT_SHIFTS[dept] && DEPT_SHIFTS[dept].length > 0) ? DEPT_SHIFTS[dept] : null;
+  if (deptShifts) {
+    const deptResult = scoreCandidates(deptShifts);
+    if (deptResult.shift && !isTooFar(deptResult.shift, deptResult.mScore, deptResult.eScore)) {
+      return deptResult.shift;
+    }
+  }
+
+  // ── 第2层：通用班次 fallback ──
+  const uniResult = scoreCandidates(UNIVERSAL_SHIFTS);
+  return (uniResult.shift) ? uniResult.shift : null;
 }
 
 function getShiftStart(times, dept) {
@@ -306,7 +317,7 @@ function getShiftStart(times, dept) {
     if (normal.length && normal.some(t => t.h < 12)) return {h:6, m:30};
     return {h:16, m:0};
   }
-  const shift = matchShift(times);
+  const shift = matchShift(times, dept);
   if (shift) {
     const [h, m] = shift.start.split(':').map(Number);
     return {h, m};
@@ -316,7 +327,7 @@ function getShiftStart(times, dept) {
 
 function getBestShift(times, dept) {
   if (dept && (dept.includes('保安') || dept.includes('卫生'))) return null;
-  return matchShift(times);
+  return matchShift(times, dept);
 }
 
 // 打卡分类
