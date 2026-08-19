@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.1 · 11通用班次 · 四条件匹配 · 部门优先</div>
+    <div class="version">v2.4-26.08.19</div>
   </div>
 </div>
 
@@ -136,39 +136,2365 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 let ALIAS_MAP = {};
 let DEPT_SHIFTS = {};
 
+// 内嵌默认配置：当本地 file:// 打开无法 fetch config.json 时作为 fallback
+const DEFAULT_CONFIG = {
+  "ALIAS_MAP": {},
+  "DEPT_SHIFTS": {
+    "CAD（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      },
+      {
+        "start": "09:00",
+        "end": "14:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "14:30"
+      }
+    ],
+    "CAM-打印组（B栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "15:00",
+        "end": "23:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "23:30",
+        "break_min": 30
+      },
+      {
+        "start": "15:00",
+        "end": "00:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:30",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      }
+    ],
+    "CAM-模型打印（4楼）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "15:00",
+        "end": "23:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "23:30",
+        "break_min": 30
+      },
+      {
+        "start": "15:00",
+        "end": "00:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:30",
+        "break_min": 30
+      },
+      {
+        "start": "06:30",
+        "end": "16:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:00"
+      },
+      {
+        "start": "06:30",
+        "end": "10:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "10:30"
+      }
+    ],
+    "CAM-模型打印（C栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "15:00",
+        "end": "23:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "23:30",
+        "break_min": 30
+      },
+      {
+        "start": "15:00",
+        "end": "00:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:30",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      }
+    ],
+    // 2026-08-16 新增：CAM-打印组（B栋）
+    // 班次含「上午/下午 + 晚间常规范段」（如 13:30-17:30 后接 18:00-22:00、16:00-17:30 后接 18:00-00:30），
+    // 晚间段属于正常工时，ot_base 设为其真正下班时刻，避免把 18:00-22:00/00:30 误算成加班。
+    // 全天班排在同起点半天班之前（四条件匹配 stable sort 同距离平局时全天优先）。
+    "CAM-打印组（B栋）": [
+      { "start": "07:00", "end": "16:30", "net_h": 8, "day_val": 1, "ot_base": "16:30" },
+      { "start": "07:00", "end": "11:00", "net_h": 4, "day_val": 0.5, "ot_base": "11:00" },
+      { "start": "07:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00" },
+      { "start": "08:00", "end": "17:30", "net_h": 8, "day_val": 1, "ot_base": "17:30" },
+      { "start": "08:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00" },
+      { "start": "13:30", "end": "22:00", "net_h": 8, "day_val": 1, "ot_base": "22:00" },
+      { "start": "13:30", "end": "17:30", "net_h": 4, "day_val": 0.5, "ot_base": "17:30" },
+      { "start": "16:00", "end": "00:30", "net_h": 8, "day_val": 1, "ot_base": "00:30" }
+    ],
+    "CAM-氧化锆切削（4楼）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "15:00",
+        "end": "23:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "23:30",
+        "break_min": 30
+      },
+      {
+        "start": "15:00",
+        "end": "00:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:30",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "15:00",
+        "end": "19:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "19:30",
+        "break_min": 30
+      }
+    ],
+    "CAM-氧化锆切削（C栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "15:00",
+        "end": "23:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "23:30",
+        "break_min": 30
+      },
+      {
+        "start": "15:00",
+        "end": "00:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:30",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      }
+    ],
+    "保安组": [
+      {
+        "start": "06:30",
+        "end": "17:30",
+        "net_h": 9.5,
+        "day_val": 1,
+        "no_ot": true
+      },
+      {
+        "start": "16:00",
+        "end": null,
+        "net_h": null,
+        "day_val": 1,
+        "no_ot": true
+      }
+    ],
+    "卫生组": [
+      {
+        "start": "06:30",
+        "end": "16:30",
+        "net_h": 8.5,
+        "day_val": 1,
+        "no_ot": true
+      }
+    ],
+    "财务部（1楼）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "仓库": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "翻译组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "非种植车瓷组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "钢托打磨组（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "进度组（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "进度组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "进度组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "烤瓷车瓷组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "隐形打磨组（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "正畸组（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "上瓷组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "种植车瓷组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "人事行政部（1楼4楼）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "翻译组（D栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:30",
+        "end": "17:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:00"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "过程检（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      }
+    ],
+    "活动石膏（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      }
+    ],
+    "胶托充胶（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      }
+    ],
+    "终检组（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      }
+    ],
+    "隐形充胶（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "过程检（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      }
+    ],
+    "个托蜡堤组": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      }
+    ],
+    "上釉组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      }
+    ],
+    "终检组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      }
+    ],
+    "胶托打磨组（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "排牙组（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "上瓷组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "终检组  (C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "客服B组（邮件）-D栋": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      }
+    ],
+    "客服组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "蜡型组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      }
+    ],
+    "美学组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "模型组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "21:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "21:00"
+      }
+    ],
+    "精密研磨组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "上OP组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      }
+    ],
+    "上OP组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "上釉组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "抛光组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "口扫修边组（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "数据下载（1楼）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "非种植CAD（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "种植CAD(C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "全锆车瓷组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "口扫修边组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "雕蜡组": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "钢托设计组（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      }
+    ],
+    "模型组（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      }
+    ],
+    "车金组（C栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      }
+    ],
+    "戴锆组（C栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      }
+    ],
+    "车金组（D栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      }
+    ],
+    "单据处理（1楼）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "数据下载（D栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "抛光组（D栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      }
+    ],
+    "收发组（C栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "收发组（D栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "07:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "金属切削组（C栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      },
+      {
+        "start": "15:30",
+        "end": "00:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:00",
+        "break_min": 30
+      },
+      {
+        "start": "15:00",
+        "end": "23:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "23:30",
+        "break_min": 30
+      }
+    ],
+    "客服A组（问单）-D栋": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      }
+    ],
+    "管理层组（1楼4楼）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00"
+      },
+      {
+        "start": "15:00",
+        "end": "23:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "23:30",
+        "break_min": 30
+      },
+      {
+        "start": "15:00",
+        "end": "00:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:30",
+        "break_min": 30
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ]
+  }
+};
+
 // 获取当前HTML所在路径，自动加载同目录下的config.json
-const CONFIG_URL = (document.currentScript?.src || location.href).replace(/[^/]*$/, '') + 'config.json';
+const CONFIG_URL = location.href.replace(/[^/]*$/, '') + 'config.json';
 
 async function loadConfig() {
-  try {
-    const resp = await fetch(CONFIG_URL);
-    if (!resp.ok) throw new Error('config.json 加载失败: ' + resp.status);
-    const config = await resp.json();
-    ALIAS_MAP = config.ALIAS_MAP || {};
-    DEPT_SHIFTS = config.DEPT_SHIFTS || {};
-    logMsg('ok', '班次配置已加载，共 ' + Object.keys(DEPT_SHIFTS).length + ' 个部门');
-    return true;
-  } catch (e) {
-    logMsg('err', '加载config.json失败: ' + e.message);
-    return false;
+  // 先用内嵌默认配置兜底，确保本地 file:// 双击可用
+  ALIAS_MAP = DEFAULT_CONFIG.ALIAS_MAP || {};
+  DEPT_SHIFTS = DEFAULT_CONFIG.DEPT_SHIFTS || {};
+  logMsg('ok', '默认班次配置已就绪，共 ' + Object.keys(DEPT_SHIFTS).length + ' 个部门');
+
+  // 如果是在 http/https 环境下，尝试加载同目录 config.json 进行覆盖
+  if (location.protocol.startsWith('http')) {
+    try {
+      const resp = await fetch(CONFIG_URL);
+      if (!resp.ok) throw new Error('config.json 加载失败: ' + resp.status);
+      const config = await resp.json();
+      ALIAS_MAP = config.ALIAS_MAP || {};
+      DEPT_SHIFTS = config.DEPT_SHIFTS || {};
+      logMsg('ok', '线上 config.json 已加载并覆盖，共 ' + Object.keys(DEPT_SHIFTS).length + ' 个部门');
+      return true;
+    } catch (e) {
+      logMsg('warn', '未找到线上 config.json，继续使用内嵌默认配置: ' + e.message);
+      return true; // 有默认配置兜底，仍算成功
+    }
   }
+  return true;
 }
 
 // ============================================================
 // 通用班次模板（用于部门无配置或班次不全时的自动推断）
 // ============================================================
 const UNIVERSAL_SHIFTS = [
-  {start:'06:30', end:'16:00', net_h:8},
-  {start:'07:00', end:'16:30', net_h:8},
-  {start:'07:30', end:'17:00', net_h:8},
-  {start:'08:00', end:'17:30', net_h:8},
-  {start:'09:00', end:'19:00', net_h:8},
-  {start:'10:00', end:'20:00', net_h:8},
-  {start:'13:30', end:'22:00', net_h:8},
-  {start:'15:00', end:'23:30', net_h:8},
-  {start:'15:30', end:'00:00', net_h:8},
-  {start:'08:00', end:'12:00', net_h:4},
-  {start:'13:30', end:'17:30', net_h:4},
+  // full-day (day_val=1) -- company-wide, dept ignored
+  {start:'06:30', end:'16:00', net_h:8, day_val:1, ot_base:'16:00'},
+  {start:'07:00', end:'16:30', net_h:8, day_val:1, ot_base:'16:30'},
+  {start:'07:30', end:'17:00', net_h:8, day_val:1, ot_base:'17:00'},
+  {start:'08:00', end:'17:30', net_h:8, day_val:1, ot_base:'17:30'},
+  {start:'09:00', end:'19:00', net_h:8, day_val:1, ot_base:'19:00'},
+  {start:'10:00', end:'20:00', net_h:8, day_val:1, ot_base:'20:00'},
+  {start:'13:30', end:'22:00', net_h:8, day_val:1, ot_base:'22:00'},
+  {start:'15:30', end:'00:00', net_h:8, day_val:1, ot_base:'00:00'},
+  {start:'16:00', end:'00:30', net_h:8, day_val:1, ot_base:'00:30'},
+  // half-day (day_val=0.5)
+  {start:'06:30', end:'10:30', net_h:4, day_val:0.5, ot_base:'10:30'},
+  {start:'07:00', end:'11:00', net_h:4, day_val:0.5, ot_base:'11:00'},
+  {start:'07:30', end:'11:30', net_h:4, day_val:0.5, ot_base:'11:30'},
+  {start:'08:00', end:'12:00', net_h:4, day_val:0.5, ot_base:'12:00'},
+  {start:'09:00', end:'14:30', net_h:4, day_val:0.5, ot_base:'14:30'},
+  {start:'10:00', end:'15:30', net_h:4, day_val:0.5, ot_base:'15:30'},
+  {start:'13:30', end:'17:30', net_h:4, day_val:0.5, ot_base:'17:30'},
+  {start:'15:30', end:'20:00', net_h:4, day_val:0.5, ot_base:'20:00'},
+  {start:'16:00', end:'20:30', net_h:4, day_val:0.5, ot_base:'20:30'},
+  {start:'18:00', end:'22:00', net_h:4, day_val:0.5, ot_base:'22:00'}
 ];
 
 // ============================================================
@@ -224,139 +2550,111 @@ function parseTimes(str) {
   return times;
 }
 
-// 去重（间隔<5分钟合并）
+// 去重（按休息时段分阈值：午餐12:00-13:30 间隔<15min合并；晚餐17:30-18:00 间隔<5min合并；其余<5min合并）
 function dedupTimes(times) {
   if (times.length <= 1) return times;
+  const LUNCH = [12 * 60, 13 * 60 + 30];    // 12:00-13:30 午餐休息
+  const DINNER = [17 * 60 + 30, 18 * 60];   // 17:30-18:00 晚餐休息
+  const inRange = (m, r) => m >= r[0] && m <= r[1];
+  const thresholdFor = (a, b) => {
+    if (inRange(a, DINNER) || inRange(b, DINNER)) return 5;   // 晚餐休息：≥5min 算两次(下午下班+晚上加班上班)
+    if (inRange(a, LUNCH) || inRange(b, LUNCH)) return 15;    // 午餐休息：≥15min 算两次(中午下班+下午上班)
+    return 5;                                                   // 其余时段基础去重
+  };
   const res = [times[0]];
   for (let i = 1; i < times.length; i++) {
-    let gap = timeToMin(times[i]) - timeToMin(res[res.length - 1]);
+    const a = timeToMin(res[res.length - 1]);
+    const b = timeToMin(times[i]);
+    let gap = b - a;
     if (gap < 0) gap += 1440;
-    if (gap >= 5) res.push(times[i]);
+    if (gap >= thresholdFor(a, b)) res.push(times[i]);
   }
   return res;
 }
 
+// 判断班次是否与打卡分布矛盾（用于 canFill 与兜底池筛选）
+// 矛盾情况：晚班需无上午卡；上午半天需无下午卡；下午半天需无上午卡
+function shiftContradictsPattern(shift, hasMorning, hasAfternoon) {
+  const sStart = parseShiftTime(shift.start);
+  const sEnd = parseShiftTime(shift.end);
+  if (sStart === null || sEnd === null) return true;
+  // 跨天班次（如下班 00:00/00:30，或 end<start）：其 end 解析出来很小（<=30），
+  // 不能再套用「上午半天(end<=12:00)」判定，否则会误把 16:00-00:30 这类夜班当成矛盾而排除。
+  const crossDay = sEnd <= 30 || sEnd < sStart;
+  if (!crossDay && sEnd <= 12 * 60 && hasAfternoon) return true; // 上午半天：有下午卡不可能
+  if (sStart >= 15 * 60 && hasMorning) return true;              // 晚班：有上午卡不可能
+  if (!crossDay && sStart >= 13 * 60 && hasMorning) return true; // 下午半天：有上午卡不可能
+  return false;
+}
+
 // 班次匹配（四条件匹配法：能上满 + 最接近 + 优先不迟到 + 卡型吻合）
-// useUniversal=true 时用通用班次模板（用于部门无配置或班次不全时）
-function inferShiftFromDept(times, dept, useUniversal) {
-  // 四条件匹配（按优先级）：
-  // 1. 能上满：最后一张打卡 >= 班次正常下班时间（允许合理提前5分钟）
-  // 2. 最接近：第一张上班打卡离哪个班次start最近
-  // 3. 同距离时优先不迟到：距离相等的班次中，优先选第一张打卡 <= 班次start的
-  // 4. 同距离+同迟到时，优先卡型吻合的班次
-  let shifts = getDeptShifts(dept);
-  // 部门无配置或强制使用通用模板时，用 UNIVERSAL_SHIFTS
-  if (!shifts.length || useUniversal) shifts = UNIVERSAL_SHIFTS;
-  const normalTimes = times.filter(t => t.h >= 6);
-  if (!normalTimes.length) return null;
+// 2026-08-17 修正：不再把"整月基准集"当硬性候选集（否则 8:00 主班、偶尔几天上 9:00 班的员工，
+// 那几天首卡 8:57 会被吞并成 8:00 班、误标迟到 57 分钟）。
+// 改为：全量通用表一次匹配，但整月基准班次在首卡距离上享受优势（BASE_BONUS，见 matchShiftInSet），
+// 使"能解释为准点/早到的更晚班次"（如 09:00 解释 8:57）能胜出，同时真小迟到仍被主基准捕获。
+function inferShiftFromDept(times, dept, useUniversal, dayIdx, processedDays) {
+  const baseShifts = (EMP_CTX && EMP_CTX.baseShifts && EMP_CTX.baseShifts.length) ? EMP_CTX.baseShifts : null;
+  return matchShiftInSet(times, UNIVERSAL_SHIFTS, dayIdx, processedDays, dept, baseShifts);
+}
 
-  const firstPunch = normalTimes[0];
-  const firstPunchMin = timeToMin(firstPunch);
-  const lastPunch = times[times.length - 1];
-  const lastPunchMin = timeToMin(lastPunch);
-
-  const hasMorning = normalTimes.some(t => t.h < 12);
-  const hasAfternoon = normalTimes.some(t => t.h >= 13);
-
-  // ── 条件1：筛选能上满半天/一天的班次 ──
-  const canFill = [];
-  for (const shift of shifts) {
-    const sStart = parseShiftTime(shift.start);
-    const sEnd = parseShiftTime(shift.end);
-    if (sStart === null || sEnd === null) continue;
-
-    // 晚班特殊（上班>=15:00）：没有上午卡才考虑晚班
-    if (sStart >= 15 * 60 && hasMorning) continue;
-
-    // 半天班特殊：
-    // 上午半天（下班<=12:00）：有下午卡不可能是上午半天
-    if (sEnd <= 12 * 60 && hasAfternoon) continue;
-    // 下午半天（上班>=13:30）：有上午卡不可能是下午半天
-    if (sStart >= 13 * 60 && hasMorning) continue;
-
-    // 判断最后一张打卡是否打到班次正常下班时间或之后
-    let lastGteEnd;
-    if (sEnd <= 30) {
-      // 跨天班次（如下班00:00），凌晨卡也算
-      lastGteEnd = (lastPunchMin <= sStart && lastPunchMin + 24 * 60 >= sEnd) ||
-                   lastPunchMin >= sEnd;
-    } else {
-      lastGteEnd = lastPunchMin >= sEnd - 5;  // 允许5分钟提前
-    }
-
-    if (lastGteEnd) canFill.push(shift);
+// 在给定班次集合内做四条件匹配（能上满 + 最接近 + 优先不迟到 + 卡型吻合）
+// baseShifts 可选：该员工整月基准班次集合；基准班次的起点距离享 BASE_BONUS 优势。
+function matchShiftInSet(times, shifts, dayIdx, processedDays, dept, baseShifts) {
+  const cls0 = classifyPunchTimes(times);
+  let anchorMin = null;
+  if (cls0.morning_start.length) {
+    anchorMin = timeToMin(cls0.morning_start[0]);
+  } else if (dayIdx !== undefined && processedDays) {
+    const nb = inferNeighborStart(dayIdx, processedDays, dept);
+    if (nb !== null && nb !== undefined) anchorMin = nb;
   }
-
-  // ── 条件2：在能上满的班次中，选最接近的 ──
-  let pool;
-  if (!canFill.length) {
-    // 没有能上满的班次，回退：直接按最接近选（不要求上满）
-    const fallback = shifts.filter(s => parseShiftTime(s.start) !== null);
-    if (!fallback.length) return null;
-    pool = fallback;
+  if (anchorMin === null) {
+    const normalTimes = times.filter(t => t.h >= 6);
+    if (!normalTimes.length) return null;
+    anchorMin = timeToMin(normalTimes[0]);
+  }
+  // 匹配哲学：早到的概率＞迟到的概率。
+  // 首卡与班次起点的「距离」按早到/迟到分别加权：早到轻罚(EARLY_W)、迟到重罚(LATE_W)。
+  // 这样 7:40 这类歧义首卡会被解释为「8:00 班早到 20 分钟」，而非「7:30 班迟到 10 分钟」。
+  const EARLY_W = 0.3;
+  const LATE_W = 1.0;
+  // 基准班次优势（2026-08-17）：
+  //  - 首卡为「早到」（<= 基准起点）或「小迟到」（< 30 分钟）时，基准起点 -30 分优势
+  //    → 系统性早到鸟稳定归基准班次；真小迟到（如 7:30 班 7:40 到）不被 8:00 班"早到解释"篡夺。
+  //  - 首卡晚于基准起点 ≥30 分钟（大迟到/疑似换班）时优势失效
+  //    → 让更晚班次的"早到解释"公平竞争（8:00 主班偶尔上 9:00 班，8:57 归 09:00 班，不误标迟到）。
+  const BASE_BONUS = 30;
+  const baseSet = (baseShifts && baseShifts.length) ? new Set(baseShifts.map(s => s.start)) : null;
+  let bestStart = null, bestW = Infinity;
+  const startSet = new Set();
+  for (const s of shifts) startSet.add(s.start);
+  for (const sStr of startSet) {
+    const sMin = parseShiftTime(sStr);
+    let w;
+    if (anchorMin <= sMin) w = (sMin - anchorMin) * EARLY_W;   // 早到：轻罚
+    else w = (anchorMin - sMin) * LATE_W;                       // 迟到：重罚
+    if (baseSet && baseSet.has(sStr)) {
+      const lateBy = anchorMin - sMin;
+      if (lateBy <= 0 || lateBy < BASE_BONUS) w -= BASE_BONUS;
+    }
+    if (w > 120) continue;
+    // 加权距离相同时，偏好更晚的班次起点（即「早到」解释），贯彻早到优先
+    if (w < bestW || (w === bestW && sMin > parseShiftTime(bestStart))) {
+      bestW = w; bestStart = sStr;
+    }
+  }
+  if (!bestStart) return null;
+  const cands = shifts.filter(s => s.start === bestStart);
+  const halfCand = cands.find(c => c.day_val < 1);
+  const fullCand = cands.find(c => c.day_val >= 1);
+  const hasWorkPast = (halfEndMin) => times.some(t => punchMinOf(t) >= halfEndMin + 30);
+  let chosen = null;
+  if (halfCand && fullCand) {
+    chosen = hasWorkPast(endMinOf(halfCand)) ? fullCand : halfCand;
   } else {
-    pool = canFill;
+    chosen = fullCand || halfCand || null;
   }
-
-  // 按第一张打卡与班次start的距离排序
-  pool.sort((a, b) =>
-    Math.abs(firstPunchMin - parseShiftTime(a.start)) -
-    Math.abs(firstPunchMin - parseShiftTime(b.start))
-  );
-
-  // ── 条件3：同距离时优先不迟到的 ──
-  const bestDist = Math.abs(firstPunchMin - parseShiftTime(pool[0].start));
-  const sameDist = pool.filter(s => Math.abs(firstPunchMin - parseShiftTime(s.start)) === bestDist);
-
-  if (sameDist.length === 1) return sameDist[0];
-
-  // 距离相同时，优先选不迟到的（第一张打卡 <= 班次start）
-  const notLate = sameDist.filter(s => firstPunchMin <= parseShiftTime(s.start));
-  if (notLate.length === 1) return notLate[0];
-  const pool3 = notLate.length ? notLate : sameDist;
-  if (pool3.length === 1) return pool3[0];
-
-  // ── 条件4：卡型吻合度 ──
-  // 根据实际打卡分布与班次预期卡型的匹配程度打分
-  const cls = classifyPunchTimes(times);
-  const hasMornCard = cls.morning_start.length > 0;
-  const hasNoonCard = cls.noon_end.length > 0;
-  const hasAftStart = cls.afternoon_start.length > 0;
-  const hasAftEnd = cls.afternoon_end.length > 0;
-  const hasOtEnd = cls.overtime_end.length > 0;
-
-  const scored = pool3.map(s => {
-    const sStart = parseShiftTime(s.start);
-    const sEnd = parseShiftTime(s.end);
-    const netH = s.net_h || 8;
-    let score = 0;
-
-    if (sStart >= 13 * 60 && netH < 5) {
-      // 下午半天班（13:30-17:30等）：期望有afternoon卡，没有morning卡
-      if (hasAftStart) score += 3;
-      if (!hasMornCard) score += 2;
-      if (hasAftEnd) score += 1;
-    } else if (sEnd <= 12 * 60 + 5 && netH <= 5) {
-      // 上午半天班（8:00-12:00等）：期望有morning+noon卡，没有afternoon卡
-      if (hasMornCard) score += 3;
-      if (hasNoonCard) score += 2;
-      if (!hasAftStart) score += 1;
-    } else if (sStart >= 13 * 60 && netH >= 8) {
-      // 下午全天班（13:30-22:00等）：期望有afternoon+overtime卡，没有morning卡
-      if (hasAftStart) score += 3;
-      if (hasOtEnd) score += 2;
-      if (!hasMornCard) score += 2;
-    } else {
-      // 普通全天班（8:00-17:30、9:00-19:00等）：期望有morning卡
-      if (hasMornCard) score += 3;
-      if (hasNoonCard) score += 1;
-    }
-
-    return { shift: s, score };
-  });
-
-  scored.sort((a, b) => b.score - a.score);
-  return scored[0].shift;
+  return chosen;
 }
 
 // 获取部门所有班次中最早的上班时间（用于迟到判断基准）
@@ -378,31 +2676,10 @@ function getDeptEarliestStart(dept) {
 // 统一的最佳班次推断函数
 // 返回完整的班次对象 {start, end, net_h, break_min, ...} 或 null
 // 优先用部门配置，匹配不合理时自动用通用模板兜底
-function getBestShift(times, dept) {
+function getBestShift(times, dept, dayIdx, processedDays) {
   const normal = times.filter(t => t.h >= 6);
   if (!normal.length) return null;
-  const firstPunchMin = timeToMin(normal[0]);
-
-  // 1. 优先用部门配置匹配
-  const shift = inferShiftFromDept(times, dept);
-  if (shift) {
-    const shiftStartMin = parseShiftTime(shift.start);
-    const dist = Math.abs(firstPunchMin - shiftStartMin);
-    // 距离<=30分钟认为匹配合理，直接用部门配置
-    if (dist <= 30) return shift;
-    // 距离太远，说明部门班次不全，尝试通用模板
-    const uShift = inferShiftFromDept(times, dept, true);
-    if (uShift) {
-      const uDist = Math.abs(firstPunchMin - parseShiftTime(uShift.start));
-      // 通用模板更近才替换，否则保留部门配置
-      if (uDist < dist) return uShift;
-    }
-    return shift;
-  }
-
-  // 2. 部门无配置，用通用模板
-  const uShift = inferShiftFromDept(times, dept, true);
-  return uShift || null;
+  return inferShiftFromDept(times, dept, true, dayIdx, processedDays) || null;
 }
 
 function getShiftStartFromDept(times, dept) {
@@ -429,6 +2706,139 @@ function getShiftStartFromDept(times, dept) {
   return {h:first.h, m:0};
 }
 
+// ============================================================
+// 按人聚类定基准班次（2026-08-16 新增）
+// 思路：单张首卡单独看无法区分「早到」还是「迟到」（07:40 既可是 8:00 班早到、也可是 7:30 班迟到）。
+//       但一个人整月的首卡合起来有模式：早到是系统性的（每天偏早一个稳定量），迟到是偶发的（一月就几天）。
+//       因此对员工整月首卡做"早到轻罚"映射，聚出他/她专属的 1~N 个基准班次起点：
+//         - 单一基准（绝大多数人）：整月都偏早/准点 → 该基准即其真实班次，边界歧义首卡一律判早到，不误伤。
+//         - 双基准（如保安月内换早/晚班）：两班都达阈值才成立，按天归到更近的基准。
+//         - 偶发迟到：少数迟到天若不足 25% 阈值，不会形成第二基准 → 仍用主基准比对 → 真迟到被精准标红。
+//       迟到/早退判定与出勤/加班计算都改用该员工基准，比逐日"最近起点"更稳更准。
+// ============================================================
+let EMP_CTX = null;  // 当前正在处理的员工基准上下文（processEmployee 内设置）
+
+// 早到轻罚映射：把分钟数映射到最近的班次起点（与 inferShiftFromDept 同哲学）
+// allowedStarts 可选：有部门配置时限定为部门班次起点，防止通用班次里的 07:30 把 08:00 部门的早到鸟误判迟到
+function snapStartEarlyBias(fMin, allowedStarts) {
+  const EARLY_W = 0.3, LATE_W = 1.0;
+  let best = null, bestW = Infinity;
+  const set = new Set();
+  const source = (allowedStarts && allowedStarts.length) ? allowedStarts : UNIVERSAL_SHIFTS.map(s => s.start);
+  for (const sStr of source) set.add(sStr);
+  for (const sStr of set) {
+    const sMin = parseShiftTime(sStr);
+    const w = (fMin <= sMin) ? (sMin - fMin) * EARLY_W : (fMin - sMin) * LATE_W;
+    if (w > 120) continue;
+    if (w < bestW || (w === bestW && sMin > parseShiftTime(best))) { bestW = w; best = sStr; }
+  }
+  return best;
+}
+
+// 中性最近映射：在给定基准集合内，按绝对距离选最近起点（用于迟到当天归班）
+// 平局偏好更晚起点（延续"早到优先"，边界歧义不误伤）
+function snapStartNeutral(fMin, baseShifts) {
+  let best = null, bestD = Infinity;
+  for (const s of baseShifts) {
+    const sMin = parseShiftTime(s.start);
+    const d = Math.abs(fMin - sMin);
+    if (d < bestD || (d === bestD && sMin > parseShiftTime(best ? best.start : '99:99'))) { bestD = d; best = s; }
+  }
+  return best;
+}
+
+// 计算某员工整月的基准班次集合（返回部门配置或 UNIVERSAL_SHIFTS 中匹配的对象数组）
+function computeEmployeeBaseShifts(emp, processedDays) {
+  const dept = emp.dept;
+  // 保安/卫生组固定 06:30/16:00，不参与推断，保持原有逻辑
+  if (dept && (dept.includes('保安') || dept.includes('卫生'))) return [];
+  const dhLen = (typeof dateHeaders !== 'undefined' && dateHeaders) ? dateHeaders.length : processedDays.length;
+  const dayCount = Math.min(dhLen, processedDays.length);
+  const snap = {};   // startStr -> 出现天数（早到轻罚映射）
+  const firstMins = [];   // 每个工作日的首卡分钟数（用于算中位数）
+  let workdays = 0;
+  // 部门有配置时，基准班次只能从部门班次里选，避免通用班次污染
+  const deptShifts = getDeptShifts(dept);
+  const allowedStarts = (deptShifts && deptShifts.length) ? [...new Set(deptShifts.map(s => s.start))] : null;
+  for (let i = 0; i < dayCount; i++) {
+    const ts = processedDays[i];
+    if (!ts || ts.trim() === '' || ts.trim() === '-') continue;
+    const times = dedupTimes(parseTimes(ts));
+    if (!times.length) continue;
+    const cls = classifyPunchTimes(times);
+    let fMin = null;
+    if (cls.morning_start.length) fMin = timeToMin(cls.morning_start[0]);
+    else {
+      const nt = times.filter(t => t.h >= 6);
+      if (nt.length) fMin = timeToMin(nt[0]);
+    }
+    if (fMin === null) continue;
+    workdays++;
+    firstMins.push(fMin);
+    const sStr = snapStartEarlyBias(fMin, allowedStarts);
+    if (sStr) snap[sStr] = (snap[sStr] || 0) + 1;
+  }
+  if (!workdays) return [];
+  const entries = Object.entries(snap).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) return [];
+  const dom = entries[0];
+  const threshold = Math.max(2, Math.floor(workdays * 0.25));
+  const baseStarts = new Set();
+  baseStarts.add(dom[0]);
+  for (let k = 1; k < entries.length; k++) {
+    if (entries[k][1] >= threshold) baseStarts.add(entries[k][0]);
+  }
+  // 结果对象从部门配置或通用班次中取值
+  const sourceShifts = (deptShifts && deptShifts.length) ? deptShifts : UNIVERSAL_SHIFTS;
+  const result = sourceShifts.filter(s => baseStarts.has(s.start));
+  emp._baseSnap = snap;       // 各起点出现天数
+  emp._firstMins = firstMins; // 首卡分钟数（用于中位数基准）
+  emp._allowedStarts = allowedStarts; // 供 employeeLateBaseStart 兜底用
+  return result;
+}
+
+// 迟到判定的基准起点（兜底用；主路径已优先用"当天匹配班次的 start"，见 processEmployee）：
+//  - 多簇（远距不同班次，如 08:00 与 09:00、08:00 与 13:30，间隔>45分钟）：按当天首卡就近归入对应簇，取该簇众数起点。
+//    避免把 8:57 误判为 8:00 班迟到（8:00 主班、偶尔几天 9:00 班 → 分簇后 8:57 归 09:00 簇）。
+//  - 单簇（相邻起点，如 07:30/08:00，间隔<=45分钟）：用该员工首卡「中位数 + 早到轻罚」确定唯一参考起点。
+//    中位数体现其真实到岗中心；早到轻罚贯彻"早到概率＞迟到概率"——整月偏早于 8:00 的早到鸟判为 8:00 班不误伤，
+//    而整月准点 7:30、仅个别天滑到 7:40 的人，中位数贴近 7:30，该天被精准标红。
+// 这样既准确区分早到/迟到，又不伤及无辜。
+function employeeLateBaseStart(emp, fMin) {
+  const snap = emp && emp._baseSnap;
+  if (!snap || !Object.keys(snap).length) return null;
+  const starts = Object.keys(snap).sort((a, b) => parseShiftTime(a) - parseShiftTime(b));
+  // 按间隔聚类：相邻 <= 45 分钟归同一簇（7:30/8:00 合并；8:00/9:00 相隔 60 分钟 → 分簇）
+  const clusters = [];
+  let cur = [starts[0]];
+  for (let i = 1; i < starts.length; i++) {
+    if (parseShiftTime(starts[i]) - parseShiftTime(starts[i - 1]) <= 45) cur.push(starts[i]);
+    else { clusters.push(cur); cur = [starts[i]]; }
+  }
+  clusters.push(cur);
+  if (clusters.length === 1) {
+    // 单簇：用首卡中位数 + 早到轻罚 映射出参考起点（贯彻早到优先）
+    const meds = emp._firstMins;
+    if (meds && meds.length) {
+      const sorted = [...meds].sort((a, b) => a - b);
+      const med = sorted[Math.floor(sorted.length / 2)];
+      return snapStartEarlyBias(med, emp._allowedStarts || null);
+    }
+    let rep = cur[0], repC = -1;
+    for (const s of cur) if (snap[s] > repC) { repC = snap[s]; rep = s; }
+    return rep;
+  }
+  // 多簇：按首卡就近归入对应簇，取该簇众数起点
+  let bestStart = null, bestD = Infinity;
+  for (const cl of clusters) {
+    let rep = cl[0], repC = -1;
+    for (const s of cl) if (snap[s] > repC) { repC = snap[s]; rep = s; }
+    const d = Math.abs(fMin - parseShiftTime(rep));
+    if (d < bestD) { bestD = d; bestStart = rep; }
+  }
+  return bestStart;
+}
+
 // 打卡分类
 function classifyPunchTimes(times) {
   const result = {morning_start:[], noon_end:[], afternoon_start:[], afternoon_end:[], overtime_start:[], overtime_end:[]};
@@ -451,15 +2861,16 @@ function classifyPunchTimes(times) {
     if (tm < 12 * 60) { result.morning_start.push(t); }
     else if (tm < 13 * 60 + 30) { noonBuffer.push({idx, t}); }
     else if (tm < 17 * 60 + 30) { result.afternoon_start.push(t); }
-    else if (tm < 17 * 60 + 50) { result.afternoon_end.push(t); }
-    else if (tm < 18 * 60) { result.overtime_start.push(t); }
+    // 17:30-18:00 先统一归 afternoon_end；是否为"加班上班卡(overtime_start)"由下方双打卡逻辑按间隔再拆。
+    // 单打卡时一律视为下午下班卡（不应在没有下班卡的情况下单独出现"加班上班卡"）。
+    else if (tm < 18 * 60) { result.afternoon_end.push(t); }
     else { result.overtime_end.push(t); }
   }
 
   noonBuffer.sort((a,b) => a.idx - b.idx);
   const gapFlags = [false];
   for (let i = 1; i < noonBuffer.length; i++) {
-    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) > 5);
+    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) >= 15);
   }
   let noonCount = 0;
   for (let i = 0; i < noonBuffer.length; i++) {
@@ -473,6 +2884,42 @@ function classifyPunchTimes(times) {
       if (noonCount > 0) { result.afternoon_start.push(t); }
       else if (i + 1 < noonBuffer.length) { result.noon_end.push(t); noonCount++; }
       else result.afternoon_start.push(t);
+    }
+  }
+  // 2026-08-14 修正（其五）：只打 1 次晚间卡 = 不加班。
+  // 若当天 17:30 之后只打了 1 次卡（例如 18:00、18:20，甚至 19:00/22:00），
+  // 无论几点，一律视为「下午下班卡(afternoon_end)」，不计入 overtime_end、不算加班。
+  // 依据：用户明确「只打 1 次卡 = 不加班」——没有「下班后再回来加班」的二次打卡证据，
+  //       不应凭单张卡臆测加班。加班需有晚走的多张卡（含 17:30-18:00 双打卡）支撑。
+  // 例外：若当天存在跨天凌晨卡(h<5)，说明是真正的夜班/通宵，则不强行覆盖（保留既有逻辑）。
+  const hasMidnightPunch = result.overtime_end.some(t => t.h < 5);
+  const eveningSameDay = [...result.afternoon_end, ...result.overtime_end]
+    .filter(t => t.h >= 5 && timeToMin(t) >= 17*60+30);
+  if (!hasMidnightPunch && eveningSameDay.length === 1) {
+    result.afternoon_end = [eveningSameDay[0]];
+    result.overtime_end = result.overtime_end.filter(t => t.h < 5); // 仅保留跨天凌晨卡（本分支已排除）
+  }
+
+  // 17:30-18:00 双打卡处理（2026-08-14）：
+  // 单打卡：已在上面统一归 afternoon_end（一律视为下午下班卡，不存在"单独一张加班上班卡"的情形）。
+  // 该区间若打 2 次及以上卡，且相邻最大间隔 >= 5 分钟 → 视为「下午下班卡 + 晚上加班上班卡」：
+  //   间隔之前的归 afternoon_end（下班），间隔之后的归 overtime_start（加班上班）。
+  // 若相邻间隔均 < 5 分钟 → 视为重复打卡，合并为一张（保留最早一张，归 afternoon_end）。
+  const getoff = [...result.afternoon_end, ...result.overtime_start]
+    .filter(t => { const m = timeToMin(t); return m >= 17*60+30 && m < 18*60; })
+    .sort((a,b)=>timeToMin(a)-timeToMin(b));
+  if (getoff.length >= 2) {
+    let maxGap = 0, splitIdx = 1;
+    for (let i = 1; i < getoff.length; i++) {
+      const g = timeToMin(getoff[i]) - timeToMin(getoff[i-1]);
+      if (g > maxGap) { maxGap = g; splitIdx = i; }
+    }
+    if (maxGap >= 5) {
+      result.afternoon_end = getoff.slice(0, splitIdx);
+      result.overtime_start = getoff.slice(splitIdx);
+    } else {
+      result.afternoon_end = [getoff[0]];
+      result.overtime_start = [];
     }
   }
   for (const k of Object.keys(result)) result[k].sort((a,b) => timeToMin(a)-timeToMin(b));
@@ -492,7 +2939,19 @@ function adjustClassified(cls, dept, times) {
     if (normal.length) {
       const last = normal[normal.length-1];
       const lm = timeToMin(last);
-      if (lm >= 13*60+30 && lm < 17*60+30) {
+      // 2026-08-16 修复：仅当该卡贴近「匹配班次的正常下班时间」时才当作下午下班卡，
+      // 否则（如 7:00-16:30 班次的人 13:30 就走了、或标准班 14:00 早退）应判定为缺下午下班卡，而非误判已正常下班。
+      // 兜底：无班次信息时沿用原 [13:30,17:30) 窗口。
+      let endOk = (lm >= 13*60+30 && lm < 17*60+30);
+      const adj = getBestShift(times, dept);
+      if (adj && adj.end) {
+        const se = parseShiftTime(adj.end);
+        if (se !== null) {
+          const seMin = se <= 30 ? se + 24*60 : se;   // 跨天班次 end 归次日
+          endOk = (lm >= seMin - 60 && lm <= seMin + 30);
+        }
+      }
+      if (endOk) {
         cls.afternoon_end = [last];
         cls.afternoon_start = cls.afternoon_start.slice(0,-1);
       }
@@ -502,14 +2961,84 @@ function adjustClassified(cls, dept, times) {
     cls.afternoon_end = [cls.overtime_start[cls.overtime_start.length-1]];
     cls.overtime_start = cls.overtime_start.slice(0,-1);
   }
-  if (cls.overtime_end.length && !cls.overtime_start.length && !cls.afternoon_end.length) {
-    cls.afternoon_end = [cls.overtime_end[cls.overtime_end.length-1]];
-    cls.overtime_end = cls.overtime_end.slice(0,-1);
+  // 与班次下班时间对齐（2026-08-16 修复）：
+  // 当最晚一张 overtime_end 卡紧贴班次「正常下班时间(ot_base)」时，它其实是「下午下班卡(afternoon_end)」而非加班。
+  // 例：半天 14:00-18:00，13:23 上班、18:15 下班 → 18:15 应为 afternoon_end，不算加班、不判缺卡。
+  // 窗口规则：
+  //  - 早班（ot_base<=18:00，如 16:30/17:30 等）：沿用原「下班可晚到 60 分」宽松窗口，避免把 18:15 这类迟到下班误判为加班。
+  //  - 晚班/跨天班（ot_base>18:00 或 00:xx，如 22:00/23:30/00:30）：收紧到 ±30 分，
+  //    避免把真正的深夜加班（23:00 / 01:00 等）误判为下班。
+  //    （CAM-打印组 B栋 的 13:30-22:00、16:00-00:30 班次尤其依赖此收紧：22:00 下班、23:00 才是真实加班。）
+  const adjShift = getBestShift(times, dept);
+  if (adjShift) {
+    const obRaw = parseShiftTime(adjShift.ot_base != null ? adjShift.ot_base : adjShift.end);
+    if (obRaw !== null) {
+      const obMin = obRaw <= 30 ? obRaw + 24 * 60 : obRaw;   // 跨天 ot_base(00:30) → 次日 24:30
+      const lo = obMin - 30;
+      const hi = obMin <= 18 * 60 ? obMin + 60 : obMin + 30; // 早班宽松(+60)，晚班/跨天收紧(+30)
+      if (cls.overtime_end.length) {
+        const sortedOt = [...cls.overtime_end].sort((a,b)=>timeToMin(a)-timeToMin(b));
+        const lastOt = sortedOt[sortedOt.length-1];
+        let lm = timeToMin(lastOt);
+        if (lastOt.h < 5) lm += 24*60; // 跨天凌晨卡归次日
+        if (lm >= lo && lm <= hi) {
+          cls.afternoon_end = [lastOt];
+          cls.overtime_end = sortedOt.slice(0, -1);
+        }
+      }
+    }
   }
+
+  // 单张晚间卡 → 加班判定（2026-08-16 修正，对"其五=只打1次卡不加班"的精细化）：
+  // 当前 cls 中 17:30 之后只有 1 张同天卡（已在前面"单卡规则"中被归为 afternoon_end），
+  // 若其时间 >=「班次加班起算点 + 60 分钟」，说明是真实加班下班卡，晋升为 overtime_end 并计加班；
+  // 否则维持 afternoon_end（正常下班，不加班、不判缺卡）。
+  // 门槛相对班次加班起算点（getOvertimeStartMin）：
+  //   - 白班(ot_base<=18:00，含标准 17:30)：18:00 起算 → 需 >= 19:00
+  //   - 9点班(ot_base=19:00)：19:00 起算 → 需 >= 20:00
+  //   - 夜班(ot_base=00:30，跨天)：次日 00:30 起算 → 需 >= 01:30
+  // 仅对"同天卡(h>=5)"生效；跨天凌晨卡(h<5)走既有逻辑，不受此块影响。
+  {
+    const s2 = getBestShift(times, dept);
+    const singleEvening = [...cls.afternoon_end, ...cls.overtime_end]
+      .filter(t => { const m = timeToMin(t); return t.h >= 5 && m >= 17*60+30; })
+      .sort((a,b)=>timeToMin(a)-timeToMin(b));
+    if (s2 && singleEvening.length === 1 && !cls.overtime_start.length) {
+      const card = singleEvening[0];
+      const cardMin = timeToMin(card);
+      const otStart = getOvertimeStartMin(s2);
+      if (cardMin >= otStart + 60) {
+        cls.overtime_end = [card];
+        cls.afternoon_end = cls.afternoon_end.filter(t => t !== card);
+      }
+    }
+  }
+
   return cls;
 }
 
 // 推断缺失的上午上班时间（前后天参考）
+function endMinOf(s){ const e = parseShiftTime(s.end); return e <= 30 ? e + 24*60 : e; }
+function punchMinOf(t){ return (t.h < 5) ? t.h*60 + t.m + 24*60 : t.h*60 + t.m; }
+function getAnchorFromTimes(ts, dept) {
+  const t = dedupTimes(parseTimes(ts));
+  if (!t.length) return null;
+  const cls = classifyPunchTimes(t);
+  if (cls.morning_start.length) return timeToMin(cls.morning_start[0]);
+  const nt = t.filter(x => x.h >= 6);
+  return nt.length ? timeToMin(nt[0]) : null;
+}
+function inferNeighborStart(dayIdx, processedDays, dept) {
+  const tryDay = (i) => {
+    if (i < 0 || i >= processedDays.length) return null;
+    const ts = processedDays[i];
+    if (!ts || ts.trim() === '' || ts.trim() === '-') return null;
+    return getAnchorFromTimes(ts, dept);
+  };
+  const a = tryDay(dayIdx - 1);
+  if (a !== null) return a;
+  return tryDay(dayIdx + 1);
+}
 function inferMissingMorningStart(dayIdx, processedDays, dept) {
   function getMorning(idx) {
     if (idx < 0 || idx >= processedDays.length) return null;
@@ -524,6 +3053,35 @@ function inferMissingMorningStart(dayIdx, processedDays, dept) {
     return null;
   }
   return getMorning(dayIdx-1) || getMorning(dayIdx+1);
+}
+
+// 计算加班的起算时间（分钟）
+// 规则：
+//  - 加班从 ot_base（班次正常下班时间）之后算起
+//  - 若 ot_base 在 18:00 之前（含标准白班 17:30），统一从 18:00 起（17:30-18:00 为全员晚餐休息，不算加班）
+//  - 跨天班次（ot_base 在 00:00 附近，即 <=30 分，如 00:30）按次日处理
+function getOvertimeStartMin(shift) {
+  if (!shift || !shift.ot_base) return 18 * 60;
+  const ob = parseShiftTime(shift.ot_base);
+  if (ob === null) return 18 * 60;
+  if (ob <= 30) return ob + 24 * 60;          // 跨天：00:30 → 次日 24:30
+  return Math.max(ob, 18 * 60);               // 白班统一 18:00；晚班（19:00/20:00/22:00/23:30 等）用 ot_base
+}
+
+// 计算加班工时（小时）
+// 取「真实时间最晚」的加班卡（凌晨卡 h<5 视为次日 +24h），从 ot_base 起算
+// 白班（ot_base <=18:00，含标准 17:30）统一 18:00 起（17:30-18:00 为全员晚餐休息）
+function computeOvertimeHours(cls, matchedShift) {
+  if (!cls.overtime_end.length) return 0;
+  let bestMin = -1;
+  for (const t of cls.overtime_end) {
+    let tm = timeToMin(t);
+    if (t.h < 5) tm += 24 * 60;               // 跨天凌晨卡归次日
+    if (tm > bestMin) bestMin = tm;
+  }
+  const otStartMin = getOvertimeStartMin(matchedShift);
+  const nightMin = bestMin - otStartMin;
+  return nightMin > 0 ? nightMin / 60 : 0;
 }
 
 // 计算全天工时
@@ -546,7 +3104,7 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
     if (midnightCards.length) lastMin = 24*60 + timeToMin(midnightCards[midnightCards.length-1]);
 
     // 用班次推断来计算工时
-    const matchedShift = getBestShift(times, dept);
+    const matchedShift = getBestShift(times, dept, dayIdx, processedDays);
     let totalH = 0;
 
     if (matchedShift) {
@@ -572,7 +3130,10 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
       totalH = (lastMin - firstMin) / 60;
       if (totalH < 0) totalH = 0;
     }
-    return {morning:0, afternoon:totalH, night:0, total:totalH};
+    // 加班：从 ot_base（班次正常下班）之后算起（与主线一致）
+    const cls2 = classifyPunchTimes(times);
+    const nightH = computeOvertimeHours(cls2, matchedShift);
+    return {morning:0, afternoon:totalH, night:nightH, total:totalH + nightH};
   }
 
   // 正常（有上午卡）
@@ -586,14 +3147,14 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
   let matchedShift = null;
   if (cls.morning_start.length) {
     morningStart = getShiftStartFromDept(times, dept);
-    matchedShift = getBestShift(times, dept);
+    matchedShift = getBestShift(times, dept, dayIdx, processedDays);
   } else if (cls.noon_end.length && dayIdx !== undefined && processedDays) {
     morningStart = inferMissingMorningStart(dayIdx, processedDays, dept);
   }
   // 缺上午上班卡但有noon_end：用noon_end反推（默认上午工作4h）
   // 有noon_end说明上午来了，只是没打卡，不应算成半天
   if (!morningStart && cls.noon_end.length) {
-    const best = getBestShift(times, dept);
+    const best = getBestShift(times, dept, dayIdx, processedDays);
     if (best) {
       const [h, m] = best.start.split(':').map(Number);
       morningStart = {h, m};
@@ -640,7 +3201,8 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
     const afStart = {h:13, m:30};
     let normalEndTime = {h:17, m:30};
     if (morningStart) {
-      if (morningStart.h === 7 && morningStart.m === 0) normalEndTime = {h:16, m:30};
+      if (morningStart.h === 6 && morningStart.m === 30) normalEndTime = {h:16, m:0};
+      else if (morningStart.h === 7 && morningStart.m === 0) normalEndTime = {h:16, m:30};
       else if (morningStart.h === 7 && morningStart.m === 30) normalEndTime = {h:17, m:0};
       else if (morningStart.h === 9) normalEndTime = {h:19, m:0};
       else if (morningStart.h === 10) normalEndTime = {h:20, m:0};
@@ -669,21 +3231,9 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
     if (afMin > 0) afHours = afMin / 60;
   }
 
-  // 晚上加班工时
+  // 晚上加班工时：从 ot_base（班次正常下班）之后算起
   if (cls.overtime_end.length) {
-    const lastOT = cls.overtime_end[cls.overtime_end.length-1];
-    let otStart = {h:18, m:0};
-    if (morningStart) {
-      if (morningStart.h === 9) otStart = {h:19, m:0};
-      else if (morningStart.h === 10) otStart = {h:20, m:0};
-    }
-    let nightMin;
-    if (lastOT.h < 6) {
-      nightMin = (24*60 - timeToMin(otStart)) + timeToMin(lastOT);
-    } else {
-      nightMin = timeToMin(lastOT) - timeToMin(otStart);
-    }
-    if (nightMin > 0) nightHours = nightMin / 60;
+    nightHours = computeOvertimeHours(cls, matchedShift);
   }
 
   const total = mornHours + afHours + nightHours;
@@ -691,6 +3241,9 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
 }
 
 // 出勤+加班计算
+// 设计原则（2026-08-14）：
+//  - 出勤天数以「匹配到的班次(全天/半天)」为基线，迟到/早退是独立标记，不撼动天数
+//  - 加班直接按「ot_base → 最晚卡」计算，不与迟到做净额抵消
 function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
   const noOt = dept.includes('保安') || dept.includes('卫生');
   if (noOt) {
@@ -698,35 +3251,39 @@ function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
   }
   if (!times.length) return {attendanceDays:0, paidDays:0, overtimeHours:0, halfDay:false};
 
-  const {total: totalH} = calculateAllHours(times, dept, dayIdx, processedDays);
-  let attendanceDays = totalH >= 8 ? 1 : totalH >= 4 ? 0.5 : 0;
-  const standardH = attendanceDays >= 1 ? 8 : attendanceDays >= 0.5 ? 4 : 0;
-  let rawOt = totalH - standardH;
+  // 出勤天数：取匹配班次的 day_val（全天=1 / 半天=0.5）；无法匹配时用打卡分布兜底
+  const matchedShift = getBestShift(times, dept, dayIdx, processedDays);
+  let attendanceDays;
+  if (matchedShift && typeof matchedShift.day_val === 'number') {
+    attendanceDays = matchedShift.day_val;
+  } else {
+    const hasM = times.some(t => t.h >= 6 && t.h < 12);
+    const hasA = times.some(t => t.h >= 13);
+    if (hasM && hasA) attendanceDays = 1;
+    else if (hasM || hasA) attendanceDays = 0.5;
+    else attendanceDays = 0;
+  }
 
+  // 加班：直接用 calculateAllHours 的 night 段（= ot_base → 最晚卡），迟到不抵消
+  const {night: overtimeRaw} = calculateAllHours(times, dept, dayIdx, processedDays);
+  let overtimeHours = 0;
+  if (overtimeRaw > 0) {
+    const ot = Math.floor(overtimeRaw * 2) * 0.5;
+    if (ot >= 1) overtimeHours = ot;
+  }
+
+  // 加班≥4h 优先抵有薪天数（避免"0.5天+4h加班"），但加班本身仍按实际计
   let paidDays = attendanceDays;
-  let remainOt = rawOt;
-  if (rawOt > 0) {
+  if (overtimeHours > 0) {
     const needed = 1 - paidDays;
     if (needed > 0) {
-      let maxConvert = Math.floor(rawOt / 4) * 0.5;
+      let maxConvert = Math.floor(overtimeHours / 4) * 0.5;
       if (maxConvert > needed) maxConvert = needed;
       paidDays += maxConvert;
-      remainOt = rawOt - maxConvert * 8;
     }
   }
 
-  let overtimeHours = 0;
-  if (remainOt > 0) {
-    const ot = Math.floor(remainOt * 2) * 0.5;
-    if (ot >= 1) overtimeHours = ot;
-  } else if (remainOt < 0) {
-    overtimeHours = Math.floor(remainOt * 2) * 0.5;
-  }
-
-  // 半天标记：出勤0.5天时标记半天
-  // 排除有下午上班卡的case（有afternoon_start说明是全天上班但工时不够半天的不算）
-  const hasAfStart = times.some(t => t.h >= 13 && t.h < 17);
-  const halfDay = (attendanceDays === 0.5 && !hasAfStart);
+  const halfDay = (attendanceDays === 0.5);
 
   return {attendanceDays, paidDays, overtimeHours, halfDay};
 }
@@ -734,6 +3291,8 @@ function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
 // 缺卡计算
 function calcMissingCards(times, dept) {
   if (!times.length) return {count:0, types:[]};
+  // 保安/保洁：不计算缺卡（不标红、不标记缺卡）
+  if (dept.includes('保安') || dept.includes('卫生')) return {count:0, types:[]};
 
   // 保安/卫生组06:30上班，05:xx可能是早到，不算凌晨卡
   const midCutoff = (dept.includes('保安') || dept.includes('卫生')) ? 5 : 6;
@@ -765,12 +3324,21 @@ function calcMissingCards(times, dept) {
     }
     const hasAfWork = hasAfStart || hasAfEnd || hasOtEnd;
     if (hasAfWork) {
-      // 缺afternoon_start：没有afternoon_start也没有noon_buffer区间的卡
-      // 有afternoon_end/overtime_start说明下午来了，不判缺afternoon_start
-      if (!hasAfStart && !hasNoonArr && !hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_start'); }
+      // 缺afternoon_start：没有afternoon_start也没有午到(12:30-13:30)卡
+      // 2026-08-16 修复：原代码错误地加了 !hasAfEnd && !overtime_start 条件，
+      // 导致"有下班卡却缺上班卡"(如 08:20/12:27/17:32 缺 13:30 上班卡)被漏判。
+      // 有 afternoon_end/overtime_start/overtime_end 恰恰证明下午来了，更该判缺 afternoon_start。
+      if (!hasAfStart && !hasNoonArr) { count++; types.push('afternoon_start'); }
       if (!hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_end'); }
     }
-    if (hasOtEnd && !cls.overtime_start.length && !hasAfEnd) { count++; types.push('overtime_start'); }
+    // 2026-08-14 修正（其二）：常规加班（已打「下午下班卡 afternoon_end」+「加班下班卡 overtime_end」）
+    // 不再把 overtime_start（17:50-18:00 的"加班上班卡"）当作必打卡点——绝大多数加班员工并不单独打这张边界卡。
+    // 2026-08-16 精细化：但当「只有 1 张同天晚间卡且已晋升为 overtime_end、同时没有 afternoon_end」时
+    // （即单卡超时下班场景，如 08:00 / 12:03 / 12:34 / 19:00，19:00 距 18:00 加班起算满 1h → 算加班 1h），
+    // 此时既没有正常下班打卡、也没有加班上班打卡，应判 2 次缺卡：下午下班卡 + 加班上班卡。
+    // 仅当 overtime_end 中存在"同天卡(h>=5)"时才适用，避免误伤真正跨天夜班（其加班卡为凌晨 h<5，本无下午/加班边界卡概念）。
+    const hasSameDayOt = cls.overtime_end.some(t => t.h >= 5);
+    if (hasOtEnd && hasSameDayOt && !cls.overtime_start.length && !hasAfEnd) { count++; types.push('overtime_start'); }
   } else if (hasMornCard) {
     const mornCards = normal.filter(t=>t.h<13);
     if (mornCards.length >= 2) {}
@@ -1156,15 +3724,19 @@ function processEmployee(emp) {
   const isNoOt = dept.includes('保安') || dept.includes('卫生');
   const processedDays = preprocessCrossMidnight([...emp.days], dept);
 
+  // 按人聚类定基准班次：用整月模式确定该员工专属的 1~N 个基准班次，供迟到判定与出勤/加班计算统一使用
+  emp._baseShifts = computeEmployeeBaseShifts(emp, processedDays);
+  EMP_CTX = { baseShifts: emp._baseShifts || [] };
+
   const stats = {
     name: emp.name, id: emp.id, dept,
     平时出勤天数:0, 平时加班工时:0, 周末天数:0, 周末加班工时:0,
     法定假日天数:0, 调休天数:0, 有薪天数:0,
-    迟到次数:0, 缺卡次数:0,
+    缺卡次数:0,
     '0点':0,'1点':0,'2点':0,'3点':0,
-    '迟到1-10分':0,'迟到11-30分':0,'迟到31-59分':0,'迟到1小时以上':0,
+    '迟到/早退1-10分':0,'迟到/早退11-30分':0,'迟到/早退31-59分':0,'迟到/早退1小时以上':0,
     加班总时长:0, 备注:'',
-    overtimeDaily:[], isWeekendDaily:[], lateDaily:[], latePunchDaily:[], missingDaily:[], halfDayDaily:[],
+    overtimeDaily:[], isWeekendDaily:[], lateDaily:[], latePunchDaily:[], missingDaily:[], halfDayDaily:[], earlyDaily:[], earlyPunchDaily:[],
     processedDays,     // 计算用（含跨天凌晨卡归入前一天，可能含下月1号列）
     rawDays: emp.days,  // 显示用（原始数据，可能含下月1号列）
   };
@@ -1176,12 +3748,14 @@ function processEmployee(emp) {
     if (!timesStr || timesStr.trim() === '' || timesStr.trim() === '-') {
       stats.overtimeDaily.push(0); stats.isWeekendDaily.push(false);
       stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]); stats.halfDayDaily.push(false);
+      stats.earlyDaily.push(false); stats.earlyPunchDaily.push(null);
       continue;
     }
     let times = parseTimes(timesStr);
     if (!times.length) {
       stats.overtimeDaily.push(0); stats.isWeekendDaily.push(false);
       stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]); stats.halfDayDaily.push(false);
+      stats.earlyDaily.push(false); stats.earlyPunchDaily.push(null);
       continue;
     }
     times = dedupTimes(times);
@@ -1224,27 +3798,77 @@ function processEmployee(emp) {
         }
       }
     } else if (normalTimes.length) {
-      // 迟到判断：用班次匹配推断出的上班时间作为基准
-      // 班次匹配用四条件法（能上满→最接近→优先不迟到→卡型吻合），比部门最早start更精准
-      // 上7:58匹配到8:00班 → 不迟到；上7:48匹配到8:00班 → 不迟到
+      // 迟到判断：优先用「当天匹配到的班次」起点作比对基准（与出勤/加班同源，最自洽）。
+      // 匹配本身已带整月基准优势 + 早到轻罚 + 大迟到失效逻辑（见 matchShiftInSet）：
+      //   - 系统性早到（林春鸽整月 7:40）→ 匹配 8:00 班 → 早到，不误伤；
+      //   - 偶发换班（8:00 主班、偶尔几天上 9:00 班）→ 那几天 8:57 匹配到 09:00 班 → 按 9 点判，不误标 8:00 迟到；
+      //   - 真小迟到（7:30 班 7:40 到）→ 匹配仍归 7:30 班 → 精准标红 10 分钟。
+      // 匹配不到班次时兜底：按人聚类基准 → 原部门推断。
       const hasMorn = normalTimes.some(t=>t.h<12);
       if (hasMorn) {
         const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
-        const shiftStart = getShiftStartFromDept(times, dept);
+        const fMin = timeToMin(first);
+        let shiftStart = null;
+        const best = getBestShift(times, dept, dayIdx, processedDays);
+        if (best && best.start) {
+          const [bh, bm] = best.start.split(':').map(Number);
+          shiftStart = {h: bh, m: bm};
+        }
+        if (!shiftStart) {
+          const lateStartStr = employeeLateBaseStart(emp, fMin);
+          if (lateStartStr) {
+            const bMin = parseShiftTime(lateStartStr);   // 按人聚类众数基准比对，准确区分早到/迟到
+            shiftStart = {h: Math.floor(bMin/60), m: bMin%60};
+          }
+        }
+        if (!shiftStart) shiftStart = getShiftStartFromDept(times, dept);
         if (timeToMin(first) > timeToMin(shiftStart)) {
           late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
           lateMin = timeToMin(first) - timeToMin(shiftStart);
         }
       }
     }
-    if (late) {
-      stats.迟到次数++;
-      if (lateMin>=1&&lateMin<=10) stats['迟到1-10分']++;
-      else if (lateMin<=30) stats['迟到11-30分']++;
-      else if (lateMin<=59) stats['迟到31-59分']++;
-      else stats['迟到1小时以上']++;
+    // 早退判断：基准=匹配班次下班时间(matched.end，跨天班次 00:30 等按次日 +24h)
+    // 取 afternoon_end / afternoon_start 中的最晚卡作为"下班卡"；若它早于班次下班、且当天没有晚于班次下班的卡(含加班/晚走) → 记为早退
+    // 例：CAM 06:30-16:00 班次，16:03 下班 = 比 16:00 晚 3 分钟 → 正常下班，不判早退
+    let early=false, earlyPunch=null, earlyMin=0;
+    {
+      const matched = getBestShift(times, dept, dayIdx, processedDays);
+      if (matched && matched.end) {
+        let shiftEndMin = parseShiftTime(matched.end);
+        if (shiftEndMin !== null) {
+          if (shiftEndMin <= 30) shiftEndMin += 24*60; // 跨天班次(00:30 等)按次日
+          const clsE = adjustClassified(classifyPunchTimes(times), dept, times);
+          // 下班卡取 afternoon_end / afternoon_start / overtime_end 中的最晚一张（含晚班 23:00 这类被分到 overtime_end 的早退）
+          const depCards = clsE.afternoon_end.concat(clsE.overtime_end);
+          if (depCards.length) {
+            const toMinX = (t)=>{ let m=timeToMin(t); if (t.h<5) m+=24*60; return m; };
+            const lastDep = depCards.reduce((a,b)=>toMinX(a)>=toMinX(b)?a:b);
+            const lastDepMin = toMinX(lastDep);
+            if (lastDepMin < shiftEndMin) {
+              // 当天是否有晚于班次下班的卡（加班/晚走）→ 若有则不判早退
+              const hasLater = times.some(t => { let tm=timeToMin(t); if (t.h<5) tm+=24*60; return tm > shiftEndMin; });
+              if (!hasLater) {
+                early=true;
+                earlyPunch=`${String(lastDep.h).padStart(2,'0')}:${String(lastDep.m).padStart(2,'0')}`;
+                earlyMin = shiftEndMin - lastDepMin;
+              }
+            }
+          }
+        }
+      }
     }
+    // 迟到 + 早退 都计入这 4 列（当月次数之和）
+    const bumpBucket = (min) => {
+      if (min>=1&&min<=10) stats['迟到/早退1-10分']++;
+      else if (min<=30) stats['迟到/早退11-30分']++;
+      else if (min<=59) stats['迟到/早退31-59分']++;
+      else stats['迟到/早退1小时以上']++;
+    };
+    if (late) bumpBucket(lateMin);
+    if (early) bumpBucket(earlyMin);
     stats.lateDaily.push(late); stats.latePunchDaily.push(latePunch);
+    stats.earlyDaily.push(early); stats.earlyPunchDaily.push(earlyPunch);
 
     // === 出勤/加班 ===
     const {attendanceDays, paidDays, overtimeHours, halfDay} = calcShiftAndOvertime(times, dept, dayIdx, processedDays);
@@ -1267,6 +3891,7 @@ function processEmployee(emp) {
     stats.缺卡次数 += mc;
     stats.missingDaily.push(mt);
   }
+  EMP_CTX = null;  // 释放员工上下文，避免影响后续处理/其他调用方
 
   stats.有薪天数 = stats.平时出勤天数 + stats.周末天数 + stats.法定假日天数 + stats.调休天数;
   stats.加班总时长 = stats.平时加班工时 + stats.周末加班工时;
@@ -1278,7 +3903,7 @@ function processEmployee(emp) {
 // ============================================================
 function renderSummary() {
   const totalEmps = empStats.length;
-  const totalLate = empStats.reduce((s,e)=>s+e.迟到次数,0);
+  const totalLate = empStats.reduce((s,e)=>s+e['迟到/早退1-10分']+e['迟到/早退11-30分']+e['迟到/早退31-59分']+e['迟到/早退1小时以上'],0);
   const totalMissing = empStats.reduce((s,e)=>s+e.缺卡次数,0);
   const totalOt = empStats.reduce((s,e)=>s+e.加班总时长,0);
   const totalAttend = empStats.reduce((s,e)=>s+e.平时出勤天数+e.周末天数,0);
@@ -1288,7 +3913,7 @@ function renderSummary() {
     <div class="stat-card"><div class="num">${totalEmps}</div><div class="label">员工总数</div></div>
     <div class="stat-card"><div class="num">${depts.size}</div><div class="label">部门数量</div></div>
     <div class="stat-card"><div class="num">${totalAttend.toFixed(1)}</div><div class="label">总出勤天数</div></div>
-    <div class="stat-card"><div class="num red">${totalLate}</div><div class="label">迟到总次数</div></div>
+    <div class="stat-card"><div class="num red">${totalLate}</div><div class="label">迟到/早退总次数</div></div>
     <div class="stat-card"><div class="num red">${totalMissing}</div><div class="label">缺卡总次数</div></div>
     <div class="stat-card"><div class="num">${totalOt.toFixed(1)}h</div><div class="label">加班总时长</div></div>
   `;
@@ -1309,7 +3934,7 @@ function renderPreview() {
     const isWe = satSunCols.includes(i);
     html += `<th class="${isWe?'orange-bg':''}">${String(dateHeaders[i]).replace(/\n/,'<br>')}</th>`;
   }
-  html += '<th>平时出勤</th><th>周末天数</th><th>有薪天数</th><th>迟到次数</th><th>缺卡次数</th><th>加班总时长</th>';
+  html += '<th>平时出勤</th><th>周末天数</th><th>有薪天数</th><th>缺卡次数</th><th>加班总时长</th>';
   html += '</tr></thead><tbody>';
 
   for (const st of preview) {
@@ -1320,6 +3945,7 @@ function renderPreview() {
       const rawDay = st.rawDays[i] || '';
       const missing = st.missingDaily[i] || [];
       const latePunch = st.latePunchDaily[i];
+      const earlyPunch = st.earlyPunchDaily[i];
       const halfDay = st.halfDayDaily[i];
       let lines = rawDay ? rawDay.split('\n') : [];
       // 插入缺卡标记
@@ -1341,14 +3967,13 @@ function renderPreview() {
         if (firstCardHour < 12) lines.push('半天');
         else lines.unshift('半天');
       }
-      const cellHtml = lines.map(l=> l==='缺卡' ? `<span class="red">缺卡</span>` : l==='半天' ? `<span class="red">半天</span>` : (l===latePunch ? `<span class="red">${l}</span>` : l)).join('<br>');
+      const cellHtml = lines.map(l=> l==='缺卡' ? `<span class="red">缺卡</span>` : l==='半天' ? `<span class="red">半天</span>` : (l===latePunch || l===earlyPunch ? `<span class="red">${l}</span>` : l)).join('<br>');
       html += `<td class="punch-cell ${isWe?'orange-bg':''}">${cellHtml}</td>`;
     }
-    // 统计列（rowspan=2）
-    html += `<td rowspan="2">${st.平时出勤天数}</td><td rowspan="2">${st.周末天数}</td><td rowspan="2">${st.有薪天数}</td>`;
-    html += `<td rowspan="2" class="${st.迟到次数>0?'red':''}">${st.迟到次数}</td>`;
-    html += `<td rowspan="2" class="${st.缺卡次数>0?'red':''}">${st.缺卡次数}</td>`;
-    html += `<td rowspan="2" class="${st.加班总时长>0?'red':''}">${st.加班总时长||''}</td>`;
+    // 统计列（不合并）
+    html += `<td>${st.平时出勤天数}</td><td>${st.周末天数}</td><td>${st.有薪天数}</td>`;
+    html += `<td class="${st.缺卡次数>0?'red':''}">${st.缺卡次数}</td>`;
+    html += `<td class="${st.加班总时长>0?'red':''}">${st.加班总时长||''}</td>`;
     html += '</tr>';
     // 加班行
     html += '<tr>';
@@ -1357,6 +3982,8 @@ function renderPreview() {
       const ot = st.overtimeDaily[i];
       html += `<td class="${isWe?'orange-bg':''} ${ot&&ot!==0?'red':''}">${ot&&ot!==0?ot:''}</td>`;
     }
+    // 统计列下方留空
+    html += '<td></td><td></td><td></td><td></td><td></td>';
     html += '</tr>';
   }
   html += '</tbody></table>';
@@ -1367,7 +3994,7 @@ function renderPreview() {
 // 导出 Excel（ExcelJS — 完整格式）
 // ============================================================
 
-function buildCellText(processedDay, missingTypes, latePunch, halfDay) {
+function buildCellText(processedDay, missingTypes, latePunch, halfDay, earlyPunch) {
   // 构建打卡文本，插入缺卡标记，返回 rich text segments
   let lines = processedDay ? processedDay.split('\n') : [];
 
@@ -1425,7 +4052,7 @@ function buildCellText(processedDay, missingTypes, latePunch, halfDay) {
       segments.push({ text: '缺卡', color: 'FF0000' });
     } else if (l === '半天') {
       segments.push({ text: '半天', color: 'FF0000' });
-    } else if (l === latePunch) {
+    } else if (l === latePunch || l === earlyPunch) {
       segments.push({ text: l, color: 'FF0000' });
     } else {
       segments.push({ text: l, color: '000000' });
@@ -1467,9 +4094,9 @@ async function exportExcel() {
     properties: { defaultRowHeight: 18 }
   });
 
-  const NEW_COLS = ['平时','周末','共计','平时出勤天数','平时加班工时','周末天数','周末加班工时',
-    '法定假日天数','调休天数','有薪天数','迟到次数','缺卡次数','0点','1点','2点','3点',
-    '迟到1-10分','迟到11-30分','迟到31-59分','迟到1小时以上','加班总时长','备注','签名确认'];
+  const NEW_COLS = ['平时出勤天数','平时加班工时','周末天数','周末加班工时',
+    '法定假日天数','调休天数','有薪天数','缺卡次数','0点','1点','2点','3点',
+    '迟到/早退1-10分','迟到/早退11-30分','迟到/早退31-59分','迟到/早退1小时以上','加班总时长','备注','签名确认'];
 
   const dayCount = dateHeaders.length; // 不含下月1号
   const totalCols = 3 + dayCount + NEW_COLS.length;
@@ -1480,7 +4107,10 @@ async function exportExcel() {
   ws.getColumn(3).width = 12;   // 部门
   for (let i = 0; i < dayCount; i++) ws.getColumn(4 + i).width = 7;
   for (let i = 0; i < NEW_COLS.length; i++) {
-    if (i === 19) ws.getColumn(4 + dayCount + i).width = 25;  // 加班总时长
+    if (i === 16) ws.getColumn(4 + dayCount + i).width = 25;  // 加班总时长
+    else if (i === 17) ws.getColumn(4 + dayCount + i).width = 30;  // 备注
+    else if (i === 18) ws.getColumn(4 + dayCount + i).width = 18;  // 签名确认
+    else if (i >= 12 && i <= 15) ws.getColumn(4 + dayCount + i).width = 10;  // 迟到/早退1-10分、11-30分、31-59分、1小时以上
     else ws.getColumn(4 + dayCount + i).width = 8;
   }
 
@@ -1542,7 +4172,7 @@ async function exportExcel() {
 
     // 每日打卡列（用原始数据 rawDays，只导出 dateHeaders.length 天，不含下月1号）
     for (let i = 0; i < dateHeaders.length; i++) {
-      const segments = buildCellText(st.rawDays[i] || '', st.missingDaily[i], st.latePunchDaily[i], st.halfDayDaily[i]);
+      const segments = buildCellText(st.rawDays[i] || '', st.missingDaily[i], st.latePunchDaily[i], st.halfDayDaily[i], st.earlyPunchDaily[i]);
       const cell = rowA.getCell(4 + i);
       // 用 rich text，全部宋体12号
       const richParts = segments.map(seg => ({
@@ -1553,32 +4183,39 @@ async function exportExcel() {
       cell.alignment = centerAlign;
     }
 
-    // 平时/周末/共计 → RowA 留空（RowB写公式）
-    const sumColStart = 4 + dayCount; // AJ列开始
-    rowA.getCell(sumColStart).value = '';
-    rowA.getCell(sumColStart + 1).value = '';
-    rowA.getCell(sumColStart + 2).value = '';
-
-    // 后20列统计（RowA）
-    // 平时加班工时和周末加班工时：RowA写公式引用平时/周末列，然后合并
+    // 统计列起始列（原「平时/周末/共计」3列已移除）
+    const sumColStart = 4 + dayCount;
     const colLetter = (n) => {
       let s = '';
       let t = n;
       while (t > 0) { t--; s = String.fromCharCode(65 + (t % 26)) + s; t = Math.floor(t / 26); }
       return s;
     };
-    const pingCol = colLetter(sumColStart);       // 平时列
-    const zhouCol = colLetter(sumColStart + 1); // 周末列
+
+    // 找出工作日和周末的每日加班列（RowB），用于平时/周末加班工时公式引用
+    const weekdayCols = [], weekendCols = [];
+    for (let i = 0; i < dayCount; i++) {
+      const cl = colLetter(4 + i);
+      if (satSunCols.includes(i)) weekendCols.push(cl);
+      else weekdayCols.push(cl);
+    }
+    const weekdaySumRef = weekdayCols.length ? weekdayCols.map(c => c + rowB_Num).join(',') : '';
+    const weekendSumRef = weekendCols.length ? weekendCols.map(c => c + rowB_Num).join(',') : '';
+
+    // 后19列统计（RowA）：平时/周末加班工时直接引用每日加班列求和
     const statRowA_Values = [
-      st.平时出勤天数, {formula:`=${pingCol}${rowA_Num}`}, st.周末天数, {formula:`=${zhouCol}${rowA_Num}`},
+      st.平时出勤天数,
+      weekdaySumRef ? { formula: `=SUM(${weekdaySumRef})` } : (st.平时加班工时 || 0),
+      st.周末天数,
+      weekendSumRef ? { formula: `=SUM(${weekendSumRef})` } : (st.周末加班工时 || 0),
       st.法定假日天数, st.调休天数, st.有薪天数,
-      st.迟到次数 || '', st.缺卡次数 || '',
+      st.缺卡次数 || '',
       st['0点'] || '', st['1点'] || '', st['2点'] || '', st['3点'] || '',
-      st['迟到1-10分'] || '', st['迟到11-30分'] || '', st['迟到31-59分'] || '', st['迟到1小时以上'] || '',
+      st['迟到/早退1-10分'] || '', st['迟到/早退11-30分'] || '', st['迟到/早退31-59分'] || '', st['迟到/早退1小时以上'] || '',
       st.加班总时长 || '', st.备注 || '', ''
     ];
     for (let i = 0; i < statRowA_Values.length; i++) {
-      rowA.getCell(sumColStart + 3 + i).value = statRowA_Values[i];
+      rowA.getCell(sumColStart + i).value = statRowA_Values[i];
     }
 
     // RowA 样式
@@ -1611,29 +4248,9 @@ async function exportExcel() {
       cell.alignment = centerAlign;
     }
 
-    // 找出工作日和周末的列号（dateHeaders已不含下月1号，所有列都参与统计）
-    const weekdayCols = [], weekendCols = [];
-    for (let i = 0; i < dayCount; i++) {
-      const cl = colLetter(4 + i);
-      if (satSunCols.includes(i)) weekendCols.push(cl);
-      else weekdayCols.push(cl);
-    }
-
-    // 平时 = SUMIF rowA 是工作日
-    const weekdaySum = weekdayCols.length ? weekdayCols.map(c => c + rowB_Num).join(',') : '';
-    rowB.getCell(sumColStart).value = weekdaySum ? { formula: `SUM(${weekdaySum})` } : 0;
-    rowB.getCell(sumColStart).font = redBoldFont;
-
-    const weekendSum = weekendCols.length ? weekendCols.map(c => c + rowB_Num).join(',') : '';
-    rowB.getCell(sumColStart + 1).value = weekendSum ? { formula: `SUM(${weekendSum})` } : 0;
-    rowB.getCell(sumColStart + 1).font = redBoldFont;
-
-    rowB.getCell(sumColStart + 2).value = { formula: `=${pingCol}${rowB_Num}+${zhouCol}${rowB_Num}` };
-    rowB.getCell(sumColStart + 2).font = redBoldFont;
-
-    // 后20列留空（平时加班工时和周末加班工时的公式已写在RowA，合并后显示RowA的值）
-    for (let i = 0; i < 20; i++) {
-      rowB.getCell(sumColStart + 3 + i).value = '';
+    // 统计列下方（RowB）留空（不合并单元格）
+    for (let i = 0; i < NEW_COLS.length; i++) {
+      rowB.getCell(sumColStart + i).value = '';
     }
 
     // RowB 样式
@@ -1656,10 +4273,7 @@ async function exportExcel() {
       ws.mergeCells(rowA_Num, col, rowB_Num, col);
     }
 
-    // === RowA 统计列合并（全部合并，公式写在RowA上） ===
-    for (let i = 0; i < statRowA_Values.length; i++) {
-      ws.mergeCells(rowA_Num, sumColStart + 3 + i, rowB_Num, sumColStart + 3 + i);
-    }
+    // 统计列不合并，RowA写值/公式，RowB留空
 
     excelRow += 2;
   }
@@ -1680,3 +4294,4 @@ async function exportExcel() {
 </script>
 </body>
 </html>
+
