@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.14-26.08.23</div>
+    <div class="version">v2.22-26.08.26 · 匹配优先级规则重定:①选班主依据=当天第一个打卡时间最接近哪个班次start(若第一张是凌晨h&lt;5则视作昨天下班卡、改用第二张卡当起点,单元格不挪动) ②并列(与起点距离相等)时优先"不迟到且能上满8小时"(且非或);并列全迟到则在满8h前提下迟到最少优先 · 通用班次17项+15部门班次</div>
   </div>
 </div>
 
@@ -140,6 +140,97 @@ let DEPT_SHIFTS = {};
 const DEFAULT_CONFIG = {
   "ALIAS_MAP": {},
   "DEPT_SHIFTS": {
+    "上OP组（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "上瓷组（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "上釉组（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "戴锆组（D栋）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "抛光组（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "种植杆卡组（C栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"13:30","end":"22:00","net_h":8,"day_val":1,"ot_base":"22:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "美学-戴冠上釉上瓷组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "美学-车瓷组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "胶托抛光（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "车瓷1组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "车瓷2组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "车瓷3组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "车瓷4组（D栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"09:00","end":"19:00","net_h":8,"day_val":1,"ot_base":"19:00"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "车瓷组（B栋）": [
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+    "车金（B栋）": [
+      {"start":"07:00","end":"16:30","net_h":8,"day_val":1,"ot_base":"16:30"},
+      {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
+      {"start":"08:00","end":"12:00","net_h":4,"day_val":0.5,"ot_base":"12:00"},
+      {"start":"13:30","end":"17:30","net_h":4,"day_val":0.5,"ot_base":"17:30"}
+    ],
+
     "CAD（D栋）": [
       {
         "start": "08:00",
@@ -184,13 +275,6 @@ const DEFAULT_CONFIG = {
         "net_h": 8,
         "day_val": 1,
         "ot_base": "22:00"
-      },
-      {
-        "start": "09:00",
-        "end": "14:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "14:30"
       }
     ],
     "CAM-打印组（B栋）": [
@@ -270,13 +354,6 @@ const DEFAULT_CONFIG = {
     "CAM-模型打印（4楼）": [
       {
         "start": "07:00",
-        "end": "16:00",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "16:00"
-      },
-      {
-        "start": "07:00",
         "end": "16:30",
         "net_h": 8,
         "day_val": 1,
@@ -332,32 +409,11 @@ const DEFAULT_CONFIG = {
         "net_h": 4,
         "day_val": 0.5,
         "ot_base": "10:30"
-      },
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
       }
     ],
     "CAM-模型打印（C栋）": [
       {
         "start": "06:30",
-        "end": "16:00",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "16:00"
-      },
-      {
-        "start": "07:00",
         "end": "16:00",
         "net_h": 8,
         "day_val": 1,
@@ -420,8 +476,6 @@ const DEFAULT_CONFIG = {
     // 晚间段属于正常工时，ot_base 设为其真正下班时刻，避免把 18:00-22:00/00:30 误算成加班。
     // 全天班排在同起点半天班之前（四条件匹配 stable sort 同距离平局时全天优先）。
     "CAM-打印组（B栋）": [
-      { "start": "06:30", "end": "16:00", "net_h": 8, "day_val": 1, "ot_base": "16:00" },
-      { "start": "07:00", "end": "16:00", "net_h": 8, "day_val": 1, "ot_base": "16:00" },
       { "start": "07:00", "end": "16:30", "net_h": 8, "day_val": 1, "ot_base": "16:30" },
       { "start": "07:00", "end": "11:00", "net_h": 4, "day_val": 0.5, "ot_base": "11:00" },
       { "start": "07:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00" },
@@ -432,20 +486,6 @@ const DEFAULT_CONFIG = {
       { "start": "16:00", "end": "00:30", "net_h": 8, "day_val": 1, "ot_base": "00:30" }
     ],
     "CAM-氧化锆切削（4楼）": [
-      {
-        "start": "06:30",
-        "end": "16:00",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "16:00"
-      },
-      {
-        "start": "07:00",
-        "end": "16:00",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "16:00"
-      },
       {
         "start": "07:00",
         "end": "16:30",
@@ -507,20 +547,6 @@ const DEFAULT_CONFIG = {
       }
     ],
     "CAM-氧化锆切削（C栋）": [
-      {
-        "start": "06:30",
-        "end": "16:00",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "16:00"
-      },
-      {
-        "start": "07:00",
-        "end": "16:00",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "16:00"
-      },
       {
         "start": "07:00",
         "end": "16:30",
@@ -909,372 +935,6 @@ const DEFAULT_CONFIG = {
         "end": "17:30",
         "net_h": 4,
         "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "车瓷1组（D栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "车瓷2组（D栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "车瓷3组（D栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "车瓷4组（D栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "车瓷组（B栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "上瓷组（B栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "上釉组（B栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "抛光组（B栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "戴锆组（D栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "美学-戴冠上釉上瓷组（D栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "美学-车瓷组（D栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "胶托抛光（B栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "上OP组（B栋）": [
-      {
-        "start": "10:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "10:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "种植杆卡组（C栋）": [
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "13:30",
-        "end": "22:00",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "22:00"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "13:30",
-        "end": "17:30",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "17:30"
-      }
-    ],
-    "车金（B栋）": [
-      {
-        "start": "07:00",
-        "end": "16:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "16:30"
-      },
-      {
-        "start": "07:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "07:00",
-        "end": "11:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "11:00"
-      },
-      {
-        "start": "07:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
-      },
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
         "ot_base": "17:30"
       }
     ],
@@ -2755,20 +2415,6 @@ const DEFAULT_CONFIG = {
     ],
     "金属切削组（C栋）": [
       {
-        "start": "06:30",
-        "end": "16:00",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "16:00"
-      },
-      {
-        "start": "07:00",
-        "end": "16:00",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "16:00"
-      },
-      {
         "start": "07:00",
         "end": "16:30",
         "net_h": 8,
@@ -2797,20 +2443,6 @@ const DEFAULT_CONFIG = {
         "day_val": 1,
         "ot_base": "23:30",
         "break_min": 30
-      },
-      {
-        "start": "08:00",
-        "end": "17:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "17:30"
-      },
-      {
-        "start": "08:00",
-        "end": "12:00",
-        "net_h": 4,
-        "day_val": 0.5,
-        "ot_base": "12:00"
       }
     ],
     "客服A组（问单）-D栋": [
@@ -2831,13 +2463,6 @@ const DEFAULT_CONFIG = {
       }
     ],
     "管理层组（1楼4楼）": [
-      {
-        "start": "06:30",
-        "end": "16:00",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "16:00"
-      },
       {
         "start": "07:00",
         "end": "16:30",
@@ -2940,7 +2565,7 @@ async function loadConfig() {
 // 通用班次模板（用于部门无配置或班次不全时的自动推断）
 // ============================================================
 const UNIVERSAL_SHIFTS = [
-  // full-day (day_val=1) -- company-wide, dept ignored
+  // 全天班（day_val=1）—— 来源：用户权威清单(2026-08-25)「全公司所有班次/通用班次」10组，整体替换
   {start:'06:30', end:'16:00', net_h:8, day_val:1, ot_base:'16:00'},
   {start:'07:00', end:'16:30', net_h:8, day_val:1, ot_base:'16:30'},
   {start:'07:30', end:'17:00', net_h:8, day_val:1, ot_base:'17:00'},
@@ -2948,19 +2573,18 @@ const UNIVERSAL_SHIFTS = [
   {start:'09:00', end:'19:00', net_h:8, day_val:1, ot_base:'19:00'},
   {start:'10:00', end:'20:00', net_h:8, day_val:1, ot_base:'20:00'},
   {start:'13:30', end:'22:00', net_h:8, day_val:1, ot_base:'22:00'},
-  {start:'15:30', end:'00:00', net_h:8, day_val:1, ot_base:'00:00'},
-  {start:'16:00', end:'00:30', net_h:8, day_val:1, ot_base:'00:30'},
-  // half-day (day_val=0.5)
+  {start:'15:00', end:'23:30', net_h:8, day_val:1, ot_base:'23:30'},
+  // 夜班/跨午夜班（day_val=1，下班过午夜）—— 真实存在，仅"通宵班(20:00-08:00等整夜跨次日早晨)"被禁用
+  {start:'15:30', end:'00:00', net_h:8, day_val:1, ot_base:'00:00', break_min:30},
+  {start:'16:00', end:'00:30', net_h:8, day_val:1, ot_base:'00:30', break_min:30},
+  // 半天班（day_val=0.5）—— 必须排在对应全天班之后
   {start:'06:30', end:'10:30', net_h:4, day_val:0.5, ot_base:'10:30'},
   {start:'07:00', end:'11:00', net_h:4, day_val:0.5, ot_base:'11:00'},
   {start:'07:30', end:'11:30', net_h:4, day_val:0.5, ot_base:'11:30'},
   {start:'08:00', end:'12:00', net_h:4, day_val:0.5, ot_base:'12:00'},
   {start:'09:00', end:'14:30', net_h:4, day_val:0.5, ot_base:'14:30'},
   {start:'10:00', end:'15:30', net_h:4, day_val:0.5, ot_base:'15:30'},
-  {start:'13:30', end:'17:30', net_h:4, day_val:0.5, ot_base:'17:30'},
-  {start:'15:30', end:'20:00', net_h:4, day_val:0.5, ot_base:'20:00'},
-  {start:'16:00', end:'20:30', net_h:4, day_val:0.5, ot_base:'20:30'},
-  {start:'18:00', end:'22:00', net_h:4, day_val:0.5, ot_base:'22:00'}
+  {start:'13:30', end:'17:30', net_h:4, day_val:0.5, ot_base:'17:30'}
 ];
 
 // ============================================================
@@ -3016,31 +2640,21 @@ function parseTimes(str) {
   return times;
 }
 
-// 去重（按休息时段分阈值：午餐12:00-13:30 间隔<15min合并；晚餐17:30-18:00 间隔<5min合并；其余<5min合并）
+// 去重（间隔<5分钟合并）
 function dedupTimes(times) {
   if (times.length <= 1) return times;
-  const LUNCH = [12 * 60, 13 * 60 + 30];    // 12:00-13:30 午餐休息
-  const DINNER = [17 * 60 + 30, 18 * 60];   // 17:30-18:00 晚餐休息
-  const inRange = (m, r) => m >= r[0] && m <= r[1];
-  const thresholdFor = (a, b) => {
-    if (inRange(a, DINNER) || inRange(b, DINNER)) return 5;   // 晚餐休息：≥5min 算两次(下午下班+晚上加班上班)
-    if (inRange(a, LUNCH) || inRange(b, LUNCH)) return 15;    // 午餐休息：≥15min 算两次(中午下班+下午上班)
-    return 5;                                                   // 其余时段基础去重
-  };
   const res = [times[0]];
   for (let i = 1; i < times.length; i++) {
-    const a = timeToMin(res[res.length - 1]);
-    const b = timeToMin(times[i]);
-    let gap = b - a;
+    let gap = timeToMin(times[i]) - timeToMin(res[res.length - 1]);
     if (gap < 0) gap += 1440;
-    if (gap >= thresholdFor(a, b)) res.push(times[i]);
+    if (gap >= 5) res.push(times[i]);
   }
   return res;
 }
 
 // 判断班次是否与打卡分布矛盾（用于 canFill 与兜底池筛选）
 // 矛盾情况：晚班需无上午卡；上午半天需无下午卡；下午半天需无上午卡
-function shiftContradictsPattern(shift, hasMorning, hasAfternoon) {
+function shiftContradictsPattern(shift, hasMorning, hasAfternoon, lastPunchMin) {
   const sStart = parseShiftTime(shift.start);
   const sEnd = parseShiftTime(shift.end);
   if (sStart === null || sEnd === null) return true;
@@ -3050,77 +2664,199 @@ function shiftContradictsPattern(shift, hasMorning, hasAfternoon) {
   if (!crossDay && sEnd <= 12 * 60 && hasAfternoon) return true; // 上午半天：有下午卡不可能
   if (sStart >= 15 * 60 && hasMorning) return true;              // 晚班：有上午卡不可能
   if (!crossDay && sStart >= 13 * 60 && hasMorning) return true; // 下午半天：有上午卡不可能
+  // 全天班信号（上午卡+下午卡同时出现）= 实际出勤一整天；任何半天班(day_val<1)都与之矛盾，
+  // 必须匹配全天班(day_val>=1)。否则上午+下午都打了卡、只是下午早走的全天班员工，
+  // 会被错配到半天班 → 误标半天。
+  // 例外：如果末卡在半天班下班点±30分钟内，说明是真半天工（如09:00-14:30班打到14:30），不过滤。
+  // 该规则仅对"同时含上午+下午卡"生效；只上午或只下午的真半天工不受影响。
+  if (shift.day_val && shift.day_val < 1 && hasMorning && hasAfternoon) {
+    if (sEnd !== null && lastPunchMin !== undefined && Math.abs(lastPunchMin - sEnd) <= 60) return false;
+    return true;
+  }
   return false;
 }
 
 // 班次匹配（四条件匹配法：能上满 + 最接近 + 优先不迟到 + 卡型吻合）
-// 2026-08-17 修正：不再把"整月基准集"当硬性候选集（否则 8:00 主班、偶尔几天上 9:00 班的员工，
-// 那几天首卡 8:57 会被吞并成 8:00 班、误标迟到 57 分钟）。
-// 改为：全量通用表一次匹配，但整月基准班次在首卡距离上享受优势（BASE_BONUS，见 matchShiftInSet），
-// 使"能解释为准点/早到的更晚班次"（如 09:00 解释 8:57）能胜出，同时真小迟到仍被主基准捕获。
-function inferShiftFromDept(times, dept, useUniversal, dayIdx, processedDays) {
-  const baseShifts = (EMP_CTX && EMP_CTX.baseShifts && EMP_CTX.baseShifts.length) ? EMP_CTX.baseShifts : null;
-  return matchShiftInSet(times, UNIVERSAL_SHIFTS, dayIdx, processedDays, dept, baseShifts);
-}
+// useUniversal=true 时用通用班次模板（用于部门无配置或班次不全时）
+function inferShiftFromDept(times, dept, useUniversal) {
+  // 四条件匹配（按优先级）：
+  // 1. 能上满：最后一张打卡 >= 班次正常下班时间（允许合理提前5分钟）
+  // 2. 最接近：第一张上班打卡离哪个班次start最近
+  // 3. 同距离时优先不迟到：距离相等的班次中，优先选第一张打卡 <= 班次start的
+  // 4. 同距离+同迟到时，优先卡型吻合的班次
+  let shifts = getDeptShifts(dept);
+  // 部门无配置或强制使用通用模板时，用 UNIVERSAL_SHIFTS
+  if (!shifts.length || useUniversal) shifts = UNIVERSAL_SHIFTS;
+  const normalTimes = times.filter(t => t.h >= 6);
+  if (!normalTimes.length) return null;
 
-// 在给定班次集合内做四条件匹配（能上满 + 最接近 + 优先不迟到 + 卡型吻合）
-// baseShifts 可选：该员工整月基准班次集合；基准班次的起点距离享 BASE_BONUS 优势。
-function matchShiftInSet(times, shifts, dayIdx, processedDays, dept, baseShifts) {
-  const cls0 = classifyPunchTimes(times);
-  let anchorMin = null;
-  if (cls0.morning_start.length) {
-    anchorMin = timeToMin(cls0.morning_start[0]);
-  } else if (dayIdx !== undefined && processedDays) {
-    const nb = inferNeighborStart(dayIdx, processedDays, dept);
-    if (nb !== null && nb !== undefined) anchorMin = nb;
-  }
-  if (anchorMin === null) {
-    const normalTimes = times.filter(t => t.h >= 6);
-    if (!normalTimes.length) return null;
-    anchorMin = timeToMin(normalTimes[0]);
-  }
-  // 匹配哲学：早到的概率＞迟到的概率。
-  // 首卡与班次起点的「距离」按早到/迟到分别加权：早到轻罚(EARLY_W)、迟到重罚(LATE_W)。
-  // 这样 7:40 这类歧义首卡会被解释为「8:00 班早到 20 分钟」，而非「7:30 班迟到 10 分钟」。
-  const EARLY_W = 0.3;
-  const LATE_W = 1.0;
-  // 基准班次优势（2026-08-17）：
-  //  - 首卡为「早到」（<= 基准起点）或「小迟到」（< 30 分钟）时，基准起点 -30 分优势
-  //    → 系统性早到鸟稳定归基准班次；真小迟到（如 7:30 班 7:40 到）不被 8:00 班"早到解释"篡夺。
-  //  - 首卡晚于基准起点 ≥30 分钟（大迟到/疑似换班）时优势失效
-  //    → 让更晚班次的"早到解释"公平竞争（8:00 主班偶尔上 9:00 班，8:57 归 09:00 班，不误标迟到）。
-  const BASE_BONUS = 30;
-  const baseSet = (baseShifts && baseShifts.length) ? new Set(baseShifts.map(s => s.start)) : null;
-  let bestStart = null, bestW = Infinity;
-  const startSet = new Set();
-  for (const s of shifts) startSet.add(s.start);
-  for (const sStr of startSet) {
-    const sMin = parseShiftTime(sStr);
-    let w;
-    if (anchorMin <= sMin) w = (sMin - anchorMin) * EARLY_W;   // 早到：轻罚
-    else w = (anchorMin - sMin) * LATE_W;                       // 迟到：重罚
-    if (baseSet && baseSet.has(sStr)) {
-      const lateBy = anchorMin - sMin;
-      if (lateBy <= 0 || lateBy < BASE_BONUS) w -= BASE_BONUS;
+  const firstPunch = normalTimes[0];
+  const firstPunchMin = timeToMin(firstPunch);
+  // 末次打卡取「当天正常卡(h>=6)的最后一笔」：凌晨卡(h<5)属昨天(前一天)的下班卡，
+  // 不应用于本日班次“能否上满”的判定，否则会把上班时间反推到下午。
+  const lastNormal = normalTimes.length ? normalTimes[normalTimes.length - 1] : times[times.length - 1];
+  const lastPunch = lastNormal;
+  const lastPunchMin = timeToMin(lastPunch);
+
+  // 上班起点锚定（用户规则）：取当天第一张卡；若第一张是凌晨(h<5，视作昨天晚班的下班卡)，
+  // 则取第二张卡作为上班起点。
+  const chrono = times.slice().sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
+  let refStart = chrono[0];
+  if (refStart && refStart.h < 5 && chrono.length > 1) refStart = chrono[1];
+  const refStartMin = timeToMin(refStart);
+
+  const hasMorning = normalTimes.some(t => t.h < 12);
+  const hasAfternoon = normalTimes.some(t => t.h >= 13);
+
+  // ── 条件1：筛选能上满半天/一天的班次 ──
+  const canFill = [];
+  for (const shift of shifts) {
+    const sStart = parseShiftTime(shift.start);
+    const sEnd = parseShiftTime(shift.end);
+    if (sStart === null || sEnd === null) continue;
+
+      // 班次与打卡分布矛盾（晚班/上午半天/下午半天）直接跳过
+      if (shiftContradictsPattern(shift, hasMorning, hasAfternoon, lastPunchMin)) continue;
+
+    // 判断最后一张打卡是否打到班次正常下班时间或之后
+    let lastGteEnd;
+    if (sEnd <= 30) {
+      // 跨天班次（如下班00:00），凌晨卡也算
+      lastGteEnd = (lastPunchMin <= sStart && lastPunchMin + 24 * 60 >= sEnd) ||
+                   lastPunchMin >= sEnd;
+    } else {
+      // 全天班允许提前3小时下班仍计入canFill（早走标缺卡/早退，不换班次）；
+      // 半天班允许提前1小时下班
+      const tolerance = (shift.day_val && shift.day_val >= 1) ? 180 : 60;
+      lastGteEnd = lastPunchMin >= sEnd - tolerance;
     }
-    if (w > 120) continue;
-    // 加权距离相同时，偏好更晚的班次起点（即「早到」解释），贯彻早到优先
-    if (w < bestW || (w === bestW && sMin > parseShiftTime(bestStart))) {
-      bestW = w; bestStart = sStr;
-    }
+
+    if (lastGteEnd) canFill.push(shift);
+    // 上班起点命中某班次 start（±15分钟内，兼容打卡 ±几分钟误差）：视为“上了该班次”。
+    // 即使提前离开（如 13:30 班只打到 17:30），也计入该班次——提前离开算“早退/缺卡”，
+    // 绝不能再反推成一个半天班（否则全天班员工被错标半天）。
+    // 该放宽仅对 CAD（D栋）生效：该部门 13:30 班是 13:30-22:00 全天班。其他部门保留原判定。
+    else if (dept === 'CAD（D栋）' && Math.abs((parseShiftTime(shift.start) || -9999) - refStartMin) <= 15) canFill.push(shift);
   }
-  if (!bestStart) return null;
-  const cands = shifts.filter(s => s.start === bestStart);
-  const halfCand = cands.find(c => c.day_val < 1);
-  const fullCand = cands.find(c => c.day_val >= 1);
-  const hasWorkPast = (halfEndMin) => times.some(t => punchMinOf(t) >= halfEndMin + 30);
-  let chosen = null;
-  if (halfCand && fullCand) {
-    chosen = hasWorkPast(endMinOf(halfCand)) ? fullCand : halfCand;
+
+  // ── 条件2：在能上满的班次中，选最接近的 ──
+  let pool;
+  if (!canFill.length) {
+    // 没有能上满的班次，回退：直接按最接近选（不要求上满）
+    // 但仍需排除与打卡分布矛盾的半天/晚班，否则会误匹配（如上午+下午卡却配到上午半天班）
+    const fallback = shifts.filter(s => parseShiftTime(s.start) !== null && !shiftContradictsPattern(s, hasMorning, hasAfternoon, lastPunchMin));
+    if (!fallback.length) return null;
+    pool = fallback;
   } else {
-    chosen = fullCand || halfCand || null;
+    pool = canFill;
   }
-  return chosen;
+
+  // 匹配主锚 = 上班起点(refStart) 与班次 start 的距离（用户规则：匹配看上班第一个打卡时间）。
+  // 部门班次优先；只有当 start 距离相同、卡型也无法区分时，才用「班次 end 与最后打卡」作最后兜底，
+  // 绝不用下班时间反推上班班次。
+  const lastMeters = (lastPunch.h < 5) ? lastPunchMin + 24 * 60 : lastPunchMin;
+  const endFit = (s) => {
+    let e = parseShiftTime(s.end);
+    if (e === null) return Infinity;
+    if (e <= 30) e += 24 * 60;            // 跨天班次 end 归次日
+    return Math.abs(e - lastMeters);
+  };
+  // 卡型吻合度打分（全天/半天/夜班区分），用于 start 距离相同、卡型可区分时的优先级
+  const cls = classifyPunchTimes(times);
+  const hasMornCard = cls.morning_start.length > 0;
+  const hasNoonCard = cls.noon_end.length > 0;
+  const hasAftStart = cls.afternoon_start.length > 0;
+  const hasAftEnd = cls.afternoon_end.length > 0;
+  const hasOtEnd = cls.overtime_end.length > 0;
+  const cardTypeScore = (s) => {
+    const sStart = parseShiftTime(s.start);
+    const sEnd = parseShiftTime(s.end);
+    const netH = s.net_h || 8;
+    let score = 0;
+    if (sStart >= 13 * 60 && netH < 5) {
+      // 下午半天班（13:30-17:30等）：期望有afternoon卡，没有morning卡
+      if (hasAftStart) score += 3;
+      if (!hasMornCard) score += 2;
+      if (hasAftEnd) score += 1;
+    } else if (sEnd <= 12 * 60 + 5 && netH <= 5) {
+      // 上午半天班（8:00-12:00等）：期望有morning+noon卡，没有afternoon卡
+      if (hasMornCard) score += 3;
+      if (hasNoonCard) score += 2;
+      if (!hasAftStart) score += 1;
+    } else if (sStart >= 13 * 60 && netH >= 8) {
+      // 下午全天班（13:30-22:00等）：期望有afternoon+overtime卡，没有morning卡
+      if (hasAftStart) score += 3;
+      if (hasOtEnd) score += 2;
+      if (!hasMornCard) score += 2;
+      if (hasAftEnd) score += 1;
+    } else {
+      // 普通全天班（8:00-17:30、9:00-19:00、CAM 7:00-16:30/8:00-17:30 等）：
+      // 期望有 morning 卡 + 下午卡（用于压制同起点半天班）
+      if (hasMornCard) score += 3;
+      if (hasNoonCard) score += 1;
+      if (hasAftStart) score += 2;
+      if (hasAftEnd) score += 1;
+    }
+    return score;
+  };
+
+  pool.sort((a, b) => {
+    const dStart = Math.abs(refStartMin - parseShiftTime(a.start)) -
+                   Math.abs(refStartMin - parseShiftTime(b.start));
+    if (dStart !== 0) return dStart;
+    // start 相同：优先卡型更吻合者（全天/半天）
+    const sc = cardTypeScore(b) - cardTypeScore(a);
+    if (sc !== 0) return sc;
+    // 卡型吻合度也相同（同起点全/半天班并列，如 13:30-22:00 与 13:30-17:30）：
+    // 对 CAD（D栋）优先全天班——该部门 13:30 班是 13:30-22:00 全天班，提前离开(打到17:30)算早退而非半天。
+    // 其他部门保留原半天判定，避免把真正的半天工错算成全天。
+    if (dept === 'CAD（D栋）') {
+      const dv = (b.day_val || 0) - (a.day_val || 0);
+      if (dv !== 0) return dv;
+    }
+    return endFit(a) - endFit(b);
+  });
+
+  // ── 条件3+4：并列（与上班起点距离相等）时的优先级 ──
+  // 规则（v2.22，用户确认选A）：距离完全相等才进入本分支破并列；距离不等已在 pool 排序中优先选最近。
+  // 并列时按以下顺序打破：
+  //   ① 优先「不迟到 且 能上满8小时」的班次（两个都要满足，且不是或）
+  //   ② 若并列者全都迟到，则在「能上满8小时」前提下，迟到最少者优先
+  //   ③ 仍无法区分，用卡型吻合度、endFit 兜底
+  const bestDist = Math.abs(refStartMin - parseShiftTime(pool[0].start));
+  const sameDist = pool.filter(s => Math.abs(refStartMin - parseShiftTime(s.start)) === bestDist);
+
+  if (sameDist.length === 1) return sameDist[0];
+
+  // 是否迟到（第一张上班卡 > 班次上班点）
+  const lateMinOf = (s) => Math.max(0, refStartMin - parseShiftTime(s.start));
+  // 能否上满8小时：全天班(day_val>=1 或 net_h>=8) 且 最后一张卡打到下班点(±15分钟容差)
+  const isFull8 = (s) => {
+    const full = (s.day_val && s.day_val >= 1) || (s.net_h && s.net_h >= 8);
+    if (!full) return false;
+    const e = parseShiftTime(s.end);
+    if (e === null) return false;
+    if (e <= 30) return true;                 // 跨天夜班视为上满
+    return lastPunchMin >= e - 15;            // 打到下班点（±15分钟容差）
+  };
+  // 从候选集中挑最优：卡型吻合度优先，endFit 兜底
+  const chooseFrom = (arr) => {
+    if (arr.length === 1) return arr[0];
+    const scored = arr.map(s => ({ shift: s, score: cardTypeScore(s), ef: endFit(s) }));
+    scored.sort((a, b) => (b.score - a.score) || (a.ef - b.ef));
+    return scored[0].shift;
+  };
+
+  // ① 不迟到 且 能上满8小时
+  const good = sameDist.filter(s => lateMinOf(s) === 0 && isFull8(s));
+  if (good.length) return chooseFrom(good);
+
+  // ② 并列者全都迟到：在「能上满8小时」前提下，迟到最少优先
+  const fullOnly = sameDist.filter(s => isFull8(s));
+  const cand = fullOnly.length ? fullOnly : sameDist;
+  const ranked = cand.map(s => ({ shift: s, late: lateMinOf(s), score: cardTypeScore(s), ef: endFit(s) }));
+  ranked.sort((a, b) => (a.late - b.late) || (b.score - a.score) || (a.ef - b.ef));
+  return ranked[0].shift;
 }
 
 // 获取部门所有班次中最早的上班时间（用于迟到判断基准）
@@ -3142,19 +2878,33 @@ function getDeptEarliestStart(dept) {
 // 统一的最佳班次推断函数
 // 返回完整的班次对象 {start, end, net_h, break_min, ...} 或 null
 // 优先用部门配置，匹配不合理时自动用通用模板兜底
-function getBestShift(times, dept, dayIdx, processedDays) {
+function getBestShift(times, dept) {
   const normal = times.filter(t => t.h >= 6);
   if (!normal.length) return null;
-  // 2026-08-19 锁定基准：有员工整月基准时，每天班次只在基准集合内选（优先不晚于首卡），
-  // 不再用当天打卡反推任意班次。彻底解决"相邻班次 + 迟到 → 匹配漂移"与逐日张冠李戴。
-  if (EMP_CTX && EMP_CTX.baseShifts && EMP_CTX.baseShifts.length) {
-    const fMin = firstMorningMinOf(times);
-    if (fMin !== null) {
-      const bs = pickBaseShiftFromList(EMP_CTX.baseShifts, fMin);
-      if (bs) return bs;
+  const firstPunchMin = timeToMin(normal[0]);
+
+  // 1. 优先用部门配置匹配
+  const shift = inferShiftFromDept(times, dept);
+  if (shift) {
+    const shiftStartMin = parseShiftTime(shift.start);
+    const dist = Math.abs(firstPunchMin - shiftStartMin);
+    // 距离<=30分钟认为匹配合理，直接用部门配置
+    if (dist <= 30) return shift;
+    // 距离太远，说明部门班次不全，尝试通用模板
+    const uShift = inferShiftFromDept(times, dept, true);
+    if (uShift) {
+      const uDist = Math.abs(firstPunchMin - parseShiftTime(uShift.start));
+      // 通用模板「明显更近」（至少近 30 分钟）才替换部门配置，
+      // 否则保留部门班次。避免迟到打卡（如 09:00 上 08:00 班）因距离>30 被通用 30 分钟粒度班次篡夺，
+      // 导致上班时间基准偏移、甚至半天被误判为全天。
+      if (uDist < dist - 30) return uShift;
     }
+    return shift;
   }
-  return inferShiftFromDept(times, dept, true, dayIdx, processedDays) || null;
+
+  // 2. 部门无配置，用通用模板
+  const uShift = inferShiftFromDept(times, dept, true);
+  return uShift || null;
 }
 
 function getShiftStartFromDept(times, dept) {
@@ -3181,275 +2931,7 @@ function getShiftStartFromDept(times, dept) {
   return {h:first.h, m:0};
 }
 
-// ============================================================
-// 按人聚类定基准班次（2026-08-16 新增）
-// 思路：单张首卡单独看无法区分「早到」还是「迟到」（07:40 既可是 8:00 班早到、也可是 7:30 班迟到）。
-//       但一个人整月的首卡合起来有模式：早到是系统性的（每天偏早一个稳定量），迟到是偶发的（一月就几天）。
-//       因此对员工整月首卡做"早到轻罚"映射，聚出他/她专属的 1~N 个基准班次起点：
-//         - 单一基准（绝大多数人）：整月都偏早/准点 → 该基准即其真实班次，边界歧义首卡一律判早到，不误伤。
-//         - 双基准（如保安月内换早/晚班）：两班都达阈值才成立，按天归到更近的基准。
-//         - 偶发迟到：少数迟到天若不足 25% 阈值，不会形成第二基准 → 仍用主基准比对 → 真迟到被精准标红。
-//       迟到/早退判定与出勤/加班计算都改用该员工基准，比逐日"最近起点"更稳更准。
-// ============================================================
-let EMP_CTX = null;  // 当前正在处理的员工基准上下文（processEmployee 内设置）
-
-// 早到轻罚映射：把分钟数映射到最近的班次起点（与 inferShiftFromDept 同哲学）
-// allowedStarts 可选：有部门配置时限定为部门班次起点，防止通用班次里的 07:30 把 08:00 部门的早到鸟误判迟到
-function snapStartEarlyBias(fMin, allowedStarts) {
-  const EARLY_W = 0.3, LATE_W = 1.0;
-  let best = null, bestW = Infinity;
-  const set = new Set();
-  const source = (allowedStarts && allowedStarts.length) ? allowedStarts : UNIVERSAL_SHIFTS.map(s => s.start);
-  for (const sStr of source) set.add(sStr);
-  for (const sStr of set) {
-    const sMin = parseShiftTime(sStr);
-    const w = (fMin <= sMin) ? (sMin - fMin) * EARLY_W : (fMin - sMin) * LATE_W;
-    if (w > 120) continue;
-    if (w < bestW || (w === bestW && sMin > parseShiftTime(best))) { bestW = w; best = sStr; }
-  }
-  return best;
-}
-
-// 中性最近映射：在给定基准集合内，按绝对距离选最近起点（用于迟到当天归班）
-// 平局偏好更晚起点（延续"早到优先"，边界歧义不误伤）
-function snapStartNeutral(fMin, baseShifts) {
-  let best = null, bestD = Infinity;
-  for (const s of baseShifts) {
-    const sMin = parseShiftTime(s.start);
-    const d = Math.abs(fMin - sMin);
-    if (d < bestD || (d === bestD && sMin > parseShiftTime(best ? best.start : '99:99'))) { bestD = d; best = s; }
-  }
-  return best;
-}
-
-// 按"到达+离开"双重拟合推断单日最贴合班次（用于定基准，避免早到轻罚把迟到鸟误吸到更晚班次）
-// 到达偏差：早到轻罚、迟到重罚；离开偏差同样处理，但权重更高(DEP_W)，
-// 因"下班时间"是判别真实班次的关键信号（06:30 班≈16:00 下班，07:00 班≈16:30+ 下班）。
-function inferDayShiftBySpan(times, sourceShifts) {
-  if (!times || !times.length || !sourceShifts || !sourceShifts.length) return null;
-  const cls = classifyPunchTimes(times);
-  let arrMin = null;
-  if (cls.morning_start.length) arrMin = timeToMin(cls.morning_start[0]);
-  else { const nt = times.filter(t => t.h >= 6); if (nt.length) arrMin = timeToMin(nt[0]); }
-  if (arrMin === null) return null;
-  let depMin = null;
-  const depCands = [...cls.afternoon_end, ...cls.overtime_end, ...cls.afternoon_start, ...cls.noon_end];
-  if (depCands.length) depMin = Math.max(...depCands.map(t => punchMinOf(t)));
-  else depMin = Math.max(...times.map(t => punchMinOf(t)));
-  if (depMin === null || isNaN(depMin)) return null;
-  const EARLY_W = 0.3, LATE_W = 1.0, DEP_W = 1.5;
-  let best = null, bestCost = Infinity;
-  for (const s of sourceShifts) {
-    const sStart = parseShiftTime(s.start);
-    const sEnd = endMinOf(s);
-    if (sStart === null || sEnd === null) continue;
-    if (arrMin > sEnd + 60) continue;        // 到达远晚于下班 → 矛盾
-    if (depMin < sStart - 120) continue;      // 离开远早于上班 → 矛盾
-    const arrDev = (arrMin >= sStart) ? (arrMin - sStart) * LATE_W : (sStart - arrMin) * EARLY_W;
-    const depDev = (depMin <= sEnd) ? (sEnd - depMin) * LATE_W : (depMin - sEnd) * LATE_W;
-    const cost = arrDev + depDev * DEP_W;
-    if (cost < bestCost) { bestCost = cost; best = s; }
-  }
-  return best;
-}
-
-// 取员工某天对应的基准班次：在 emp._baseShifts 中选起点最贴近当天首卡者，
-// 优先"不晚于首卡"的基准（即员工在自己班次内早到/准点），其余取最近。供迟到/早退判定同源使用。
-// 在给定基准班次集合内，用"中性绝对距离"选起点最贴近当天首卡者。
-// 这是"锁定整月基准、不再按当天打卡反推任意班次"的核心：相邻班次、迟到、换班都不会再漂移。
-// 用中性距离(而非"优先不晚于首卡")，可同时正确处理两类情况：
-//   - 08:00 主班、某天迟到 08:25 → |08:00-08:25|=25 < |09:00-08:25|=35 → 仍归 08:00（迟到25，不被吸到 09:00）
-//   - 09:00 次班、某天早到 08:50 → |09:00-08:50|=10 < |08:00-08:50|=50 → 归 09:00（早到10，不被误吸回 08:00 标迟到）
-function pickBaseShiftFromList(baseShifts, fMin) {
-  if (!baseShifts || !baseShifts.length) return null;
-  let best = null, bestD = Infinity;
-  for (const s of baseShifts) {
-    const sm = parseShiftTime(s.start);
-    if (sm === null) continue;
-    const d = Math.abs(fMin - sm);
-    if (d < bestD || (d === bestD && parseShiftTime(s.start) > parseShiftTime(best ? best.start : '99:99'))) {
-      bestD = d; best = s;
-    }
-  }
-  return best;
-}
-function pickBaseShiftForDay(emp, fMin) {
-  return pickBaseShiftFromList(emp && emp._baseShifts, fMin);
-}
-
-function firstMorningMinOf(times) {
-  const cls = classifyPunchTimes(times);
-  if (cls.morning_start.length) return timeToMin(cls.morning_start[0]);
-  const nt = times.filter(t => t.h >= 6);
-  return nt.length ? timeToMin(nt[0]) : null;
-}
-function lastDepartureMinOf(times) {
-  const cls = classifyPunchTimes(times);
-  const cands = [...cls.afternoon_end, ...cls.overtime_end, ...cls.afternoon_start];
-  if (!cands.length) return null;
-  return Math.max(...cands.map(t => punchMinOf(t)));
-}
-// 迟到/早退判定用的"当日班次"：优先员工整月基准（与出勤同源、稳定，避免逐日匹配漂移），
-// 但若当日离开远早于基准班次下班(>60分)，说明当天并非基准班次（如夜班员工偶上早班），
-// 则改用当日"到达+离开"双重拟合班次，避免把 22:08 这类正常下班误判为早退。
-function resolveShiftForDay(emp, times, dept, dayIdx, processedDays) {
-  // 2026-08-19 锁定基准：每天一律用员工整月基准班次判定迟到/早退，
-  // 不再用当天"到达+离开"拟合(dayShift)反推，彻底避免逐日漂移与误判早退/迟到。
-  // 疑似迟到/早走的日子也统一归整月基准班次，迟到/早退单独标记，不另拟合班次。
-  const fMin = firstMorningMinOf(times);
-  const baseShift = (fMin !== null) ? pickBaseShiftForDay(emp, fMin) : null;
-  if (baseShift) return baseShift;
-  // 兜底：无整月基准（极端/异常数据）才退回当天"到达+离开"拟合
-  const deptShifts = getDeptShifts(dept);
-  const sourceShifts = (deptShifts && deptShifts.length) ? deptShifts : UNIVERSAL_SHIFTS;
-  return inferDayShiftBySpan(times, sourceShifts);
-}
-
-// 计算某员工整月的基准班次集合（返回部门配置或 UNIVERSAL_SHIFTS 中匹配的对象数组）
-function computeEmployeeBaseShifts(emp, processedDays) {
-  const dept = emp.dept;
-  // 保安/卫生组固定 06:30/16:00，不参与推断，保持原有逻辑
-  if (dept && (dept.includes('保安') || dept.includes('卫生'))) return [];
-  const dhLen = (typeof dateHeaders !== 'undefined' && dateHeaders) ? dateHeaders.length : processedDays.length;
-  const dayCount = Math.min(dhLen, processedDays.length);
-  const snap = {};   // startStr -> 出现天数（供 employeeLateBaseStart 兜底用）
-  const variantCount = {}; // "start|end" -> 出现天数（用于在同一起点内选出现最多的变体：半天/全天自动选对）
-  const firstMins = [];   // 每个工作日的首卡分钟数（用于算中位数）
-  let workdays = 0;
-  // 部门有配置时，基准班次只能从部门班次里选，避免通用班次污染
-  const deptShifts = getDeptShifts(dept);
-  const allowedStarts = (deptShifts && deptShifts.length) ? [...new Set(deptShifts.map(s => s.start))] : null;
-  const sourceShifts = (deptShifts && deptShifts.length) ? deptShifts : UNIVERSAL_SHIFTS;
-  for (let i = 0; i < dayCount; i++) {
-    const ts = processedDays[i];
-    if (!ts || ts.trim() === '' || ts.trim() === '-') continue;
-    const times = dedupTimes(parseTimes(ts));
-    if (!times.length) continue;
-    const cls = classifyPunchTimes(times);
-    let fMin = null;
-    if (cls.morning_start.length) fMin = timeToMin(cls.morning_start[0]);
-    else {
-      const nt = times.filter(t => t.h >= 6);
-      if (nt.length) fMin = timeToMin(nt[0]);
-    }
-    if (fMin === null) continue;
-    workdays++;
-    firstMins.push(fMin);
-    // 2026-08-19 修复(CAM 06:30 班)：用"到达+离开"双重拟合选最贴合班次起点，
-    // 避免早到轻罚把"06:30 班、偶尔 7 点后才到"的员工误吸到 07:00 基准(致 16:01 误判早退)。
-    let dayShift = inferDayShiftBySpan(times, sourceShifts);
-    if (!dayShift) {
-      const sStr = snapStartEarlyBias(fMin, allowedStarts);
-      if (sStr) dayShift = sourceShifts.find(s => s.start === sStr) || null;
-    }
-    if (dayShift) {
-      snap[dayShift.start] = (snap[dayShift.start] || 0) + 1;
-      const vkey = dayShift.start + '|' + dayShift.end;
-      variantCount[vkey] = (variantCount[vkey] || 0) + 1;
-    }
-  }
-  if (!workdays) return [];
-  const entries = Object.entries(snap).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) return [];
-  const dom = entries[0];
-  const threshold = Math.max(2, Math.floor(workdays * 0.25));
-  const baseStarts = new Set();
-  baseStarts.add(dom[0]);
-  for (let k = 1; k < entries.length; k++) {
-    if (entries[k][1] >= threshold) baseStarts.add(entries[k][0]);
-  }
-  // 结果对象：每个选中的起点，取该起点下出现最多的变体（半天/全天自动选对，避免把全天班员工误挂到半天班）
-  const result = [];
-  for (const st of baseStarts) {
-    let bestKey = null, bestC = -1;
-    for (const key in variantCount) {
-      if (key.split('|')[0] === st && variantCount[key] > bestC) { bestC = variantCount[key]; bestKey = key; }
-    }
-    if (bestKey) {
-      const [s, e] = bestKey.split('|');
-      const sh = sourceShifts.find(x => x.start === s && x.end === e);
-      if (sh) result.push(sh);
-    }
-  }
-  emp._baseSnap = snap;       // 各起点出现天数（供 employeeLateBaseStart 兜底）
-  emp._firstMins = firstMins; // 首卡分钟数（用于中位数基准）
-  emp._allowedStarts = allowedStarts; // 供 employeeLateBaseStart 兜底用
-  return result;
-}
-
-// 迟到判定的基准起点（兜底用；主路径已优先用"当天匹配班次的 start"，见 processEmployee）：
-//  - 多簇（远距不同班次，如 08:00 与 09:00、08:00 与 13:30，间隔>45分钟）：按当天首卡就近归入对应簇，取该簇众数起点。
-//    避免把 8:57 误判为 8:00 班迟到（8:00 主班、偶尔几天 9:00 班 → 分簇后 8:57 归 09:00 簇）。
-//  - 单簇（相邻起点，如 07:30/08:00，间隔<=45分钟）：用该员工首卡「中位数 + 早到轻罚」确定唯一参考起点。
-//    中位数体现其真实到岗中心；早到轻罚贯彻"早到概率＞迟到概率"——整月偏早于 8:00 的早到鸟判为 8:00 班不误伤，
-//    而整月准点 7:30、仅个别天滑到 7:40 的人，中位数贴近 7:30，该天被精准标红。
-// 这样既准确区分早到/迟到，又不伤及无辜。
-function employeeLateBaseStart(emp, fMin) {
-  const snap = emp && emp._baseSnap;
-  if (!snap || !Object.keys(snap).length) return null;
-  const starts = Object.keys(snap).sort((a, b) => parseShiftTime(a) - parseShiftTime(b));
-  // 按间隔聚类：相邻 <= 45 分钟归同一簇（7:30/8:00 合并；8:00/9:00 相隔 60 分钟 → 分簇）
-  const clusters = [];
-  let cur = [starts[0]];
-  for (let i = 1; i < starts.length; i++) {
-    if (parseShiftTime(starts[i]) - parseShiftTime(starts[i - 1]) <= 45) cur.push(starts[i]);
-    else { clusters.push(cur); cur = [starts[i]]; }
-  }
-  clusters.push(cur);
-  if (clusters.length === 1) {
-    // 单簇：用首卡中位数 + 早到轻罚 映射出参考起点（贯彻早到优先）
-    const meds = emp._firstMins;
-    if (meds && meds.length) {
-      const sorted = [...meds].sort((a, b) => a - b);
-      const med = sorted[Math.floor(sorted.length / 2)];
-      return snapStartEarlyBias(med, emp._allowedStarts || null);
-    }
-    let rep = cur[0], repC = -1;
-    for (const s of cur) if (snap[s] > repC) { repC = snap[s]; rep = s; }
-    return rep;
-  }
-  // 多簇：按首卡就近归入对应簇，取该簇众数起点
-  let bestStart = null, bestD = Infinity;
-  for (const cl of clusters) {
-    let rep = cl[0], repC = -1;
-    for (const s of cl) if (snap[s] > repC) { repC = snap[s]; rep = s; }
-    const d = Math.abs(fMin - parseShiftTime(rep));
-    if (d < bestD) { bestD = d; bestStart = rep; }
-  }
-  return bestStart;
-}
-
 // 打卡分类
-// 2026-08-23 早餐豁免：仅下列 6 个部门、且上 6:30 早班的人，可在 7:50-8:00 外出买早餐。
-// 关键区分：这 6 个部门里既有 6:30 早班人、也有 8:00 班的人。
-//   - 6:30 早班人：存在早于早餐窗口的上午到岗卡（约 ≤7:30，表明是 6:30 班）→ 适用早餐规则；
-//   - 8:00 班的人：仅近 8 点打 1 次卡（如 7:42）→ 视为正常到岗上 8:00 班，不适用早餐规则、不计缺卡。
-// 早餐窗口 7:50-8:00（含两端）内，对 6:30 早班人：
-//   ≥2 张（出去+回来）：剔除，正常上班，无缺卡；
-//   1 张（只打了出去/回来其一）：剔除，但记 1 次缺卡（标记红色）；
-//   0 张：没出去买早餐，正常上班。
-// 剔除窗口卡是为避免其被误判为首卡/末卡；单卡情况额外记 1 次缺卡（买早餐另一张卡）。
-const BREAKFAST_EXEMPT_DEPTS = new Set([
-  "CAM-打印组（B栋）", "CAM-模型打印（4楼）", "CAM-模型打印（C栋）",
-  "CAM-氧化锆切削（4楼）", "CAM-氧化锆切削（C栋）", "金属切削组（C栋）"
-]);
-function stripBreakfastTimes(times, dept) {
-  let breakfastMissing = false;
-  if (!dept || !BREAKFAST_EXEMPT_DEPTS.has(dept)) return {times, breakfastMissing};
-  // 仅对「6:30 早班人」适用早餐规则：需存在早于 7:30 的上午到岗卡（否则视为 8:00 班的人，正常到岗）
-  const morning = times.filter(t => { const m = timeToMin(t); return m >= 5*60 && m < 12*60; });
-  if (!morning.length) return {times, breakfastMissing}; // 无上午卡，谈不上早餐
-  const earliest = morning.reduce((a, b) => timeToMin(a) <= timeToMin(b) ? a : b);
-  const is630Worker = timeToMin(earliest) < 7*60+30;
-  if (!is630Worker) return {times, breakfastMissing}; // 8:00 班的人：正常按 8:00 班次处理，不触发早餐规则
-  const inWin = (t) => { const m = timeToMin(t); return m >= 7*60+50 && m <= 8*60; };
-  const win = times.filter(inWin);
-  if (win.length === 0) return {times, breakfastMissing}; // 6:30 早班人但没买早餐，正常
-  // 1 张或 ≥2 张都从序列剔除；仅 1 张时记 1 次缺卡（另一张卡未打）
-  breakfastMissing = (win.length === 1);
-  return {times: times.filter(t => !inWin(t)), breakfastMissing};
-}
-
 function classifyPunchTimes(times) {
   const result = {morning_start:[], noon_end:[], afternoon_start:[], afternoon_end:[], overtime_start:[], overtime_end:[]};
   if (!times.length) return result;
@@ -3480,7 +2962,7 @@ function classifyPunchTimes(times) {
   noonBuffer.sort((a,b) => a.idx - b.idx);
   const gapFlags = [false];
   for (let i = 1; i < noonBuffer.length; i++) {
-    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) >= 15);
+    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) > 5);
   }
   let noonCount = 0;
   for (let i = 0; i < noonBuffer.length; i++) {
@@ -3496,25 +2978,26 @@ function classifyPunchTimes(times) {
       else result.afternoon_start.push(t);
     }
   }
-  // 2026-08-14 修正（其五）：只打 1 次晚间卡 = 不加班。
-  // 若当天 17:30 之后只打了 1 次卡（例如 18:00、18:20，甚至 19:00/22:00），
-  // 无论几点，一律视为「下午下班卡(afternoon_end)」，不计入 overtime_end、不算加班。
-  // 依据：用户明确「只打 1 次卡 = 不加班」——没有「下班后再回来加班」的二次打卡证据，
-  //       不应凭单张卡臆测加班。加班需有晚走的多张卡（含 17:30-18:00 双打卡）支撑。
-  // 例外：若当天存在跨天凌晨卡(h<5)，说明是真正的夜班/通宵，则不强行覆盖（保留既有逻辑）。
+  // 2026-08-14 修正（其五）的修正：单张晚间卡是否算加班，取决于当天是否已有"完整工作日"信号。
+  // 若全天只有这一张晚间卡、且没有任何上午/午休/下午信号 —— 才是真正的"只打1次卡"，视为无加班的单次下班卡。
+  // 若已有上班/午休/下午信号（说明是完整工作日、只是晚走打了张卡，如何贵业 08:00+12:00+19:13），
+  //   该晚间卡应计为加班，不再强行清零。
+  // 例外：若当天存在跨天凌晨卡(h<5)，说明是真正的夜班/通宵，则不强行覆盖。
   const hasMidnightPunch = result.overtime_end.some(t => t.h < 5);
+  const hasWorkSignal = result.morning_start.length > 0 || result.noon_end.length > 0 ||
+                        result.afternoon_start.length > 0 || result.afternoon_end.length > 0;
   const eveningSameDay = [...result.afternoon_end, ...result.overtime_end]
     .filter(t => t.h >= 5 && timeToMin(t) >= 17*60+30);
-  if (!hasMidnightPunch && eveningSameDay.length === 1) {
+  if (!hasMidnightPunch && eveningSameDay.length === 1 && !hasWorkSignal) {
     result.afternoon_end = [eveningSameDay[0]];
     result.overtime_end = result.overtime_end.filter(t => t.h < 5); // 仅保留跨天凌晨卡（本分支已排除）
   }
 
   // 17:30-18:00 双打卡处理（2026-08-14）：
   // 单打卡：已在上面统一归 afternoon_end（一律视为下午下班卡，不存在"单独一张加班上班卡"的情形）。
-  // 该区间若打 2 次及以上卡，且相邻最大间隔 >= 5 分钟 → 视为「下午下班卡 + 晚上加班上班卡」：
+  // 该区间若打 2 次及以上卡，且相邻最大间隔 >= 8 分钟 → 视为「下午下班卡 + 晚上加班上班卡」：
   //   间隔之前的归 afternoon_end（下班），间隔之后的归 overtime_start（加班上班）。
-  // 若相邻间隔均 < 5 分钟 → 视为重复打卡，合并为一张（保留最早一张，归 afternoon_end）。
+  // 若相邻间隔均 < 8 分钟 → 视为重复打卡，合并为一张（保留最早一张，归 afternoon_end）。
   const getoff = [...result.afternoon_end, ...result.overtime_start]
     .filter(t => { const m = timeToMin(t); return m >= 17*60+30 && m < 18*60; })
     .sort((a,b)=>timeToMin(a)-timeToMin(b));
@@ -3524,7 +3007,7 @@ function classifyPunchTimes(times) {
       const g = timeToMin(getoff[i]) - timeToMin(getoff[i-1]);
       if (g > maxGap) { maxGap = g; splitIdx = i; }
     }
-    if (maxGap >= 5) {
+    if (maxGap >= 8) {
       result.afternoon_end = getoff.slice(0, splitIdx);
       result.overtime_start = getoff.slice(splitIdx);
     } else {
@@ -3598,57 +3081,10 @@ function adjustClassified(cls, dept, times) {
       }
     }
   }
-
-  // 单张晚间卡 → 加班判定（2026-08-16 修正，对"其五=只打1次卡不加班"的精细化）：
-  // 当前 cls 中 17:30 之后只有 1 张同天卡（已在前面"单卡规则"中被归为 afternoon_end），
-  // 若其时间 >=「班次加班起算点 + 60 分钟」，说明是真实加班下班卡，晋升为 overtime_end 并计加班；
-  // 否则维持 afternoon_end（正常下班，不加班、不判缺卡）。
-  // 门槛相对班次加班起算点（getOvertimeStartMin）：
-  //   - 白班(ot_base<=18:00，含标准 17:30)：18:00 起算 → 需 >= 19:00
-  //   - 9点班(ot_base=19:00)：19:00 起算 → 需 >= 20:00
-  //   - 夜班(ot_base=00:30，跨天)：次日 00:30 起算 → 需 >= 01:30
-  // 仅对"同天卡(h>=5)"生效；跨天凌晨卡(h<5)走既有逻辑，不受此块影响。
-  {
-    const s2 = getBestShift(times, dept);
-    const singleEvening = [...cls.afternoon_end, ...cls.overtime_end]
-      .filter(t => { const m = timeToMin(t); return t.h >= 5 && m >= 17*60+30; })
-      .sort((a,b)=>timeToMin(a)-timeToMin(b));
-    if (s2 && singleEvening.length === 1 && !cls.overtime_start.length) {
-      const card = singleEvening[0];
-      const cardMin = timeToMin(card);
-      const otStart = getOvertimeStartMin(s2);
-      if (cardMin >= otStart + 60) {
-        cls.overtime_end = [card];
-        cls.afternoon_end = cls.afternoon_end.filter(t => t !== card);
-      }
-    }
-  }
-
   return cls;
 }
 
 // 推断缺失的上午上班时间（前后天参考）
-function endMinOf(s){ const e = parseShiftTime(s.end); return e <= 30 ? e + 24*60 : e; }
-function punchMinOf(t){ return (t.h < 5) ? t.h*60 + t.m + 24*60 : t.h*60 + t.m; }
-function getAnchorFromTimes(ts, dept) {
-  const t = dedupTimes(parseTimes(ts));
-  if (!t.length) return null;
-  const cls = classifyPunchTimes(t);
-  if (cls.morning_start.length) return timeToMin(cls.morning_start[0]);
-  const nt = t.filter(x => x.h >= 6);
-  return nt.length ? timeToMin(nt[0]) : null;
-}
-function inferNeighborStart(dayIdx, processedDays, dept) {
-  const tryDay = (i) => {
-    if (i < 0 || i >= processedDays.length) return null;
-    const ts = processedDays[i];
-    if (!ts || ts.trim() === '' || ts.trim() === '-') return null;
-    return getAnchorFromTimes(ts, dept);
-  };
-  const a = tryDay(dayIdx - 1);
-  if (a !== null) return a;
-  return tryDay(dayIdx + 1);
-}
 function inferMissingMorningStart(dayIdx, processedDays, dept) {
   function getMorning(idx) {
     if (idx < 0 || idx >= processedDays.length) return null;
@@ -3714,7 +3150,7 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
     if (midnightCards.length) lastMin = 24*60 + timeToMin(midnightCards[midnightCards.length-1]);
 
     // 用班次推断来计算工时
-    const matchedShift = getBestShift(times, dept, dayIdx, processedDays);
+    const matchedShift = getBestShift(times, dept);
     let totalH = 0;
 
     if (matchedShift) {
@@ -3757,14 +3193,14 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
   let matchedShift = null;
   if (cls.morning_start.length) {
     morningStart = getShiftStartFromDept(times, dept);
-    matchedShift = getBestShift(times, dept, dayIdx, processedDays);
+    matchedShift = getBestShift(times, dept);
   } else if (cls.noon_end.length && dayIdx !== undefined && processedDays) {
     morningStart = inferMissingMorningStart(dayIdx, processedDays, dept);
   }
   // 缺上午上班卡但有noon_end：用noon_end反推（默认上午工作4h）
   // 有noon_end说明上午来了，只是没打卡，不应算成半天
   if (!morningStart && cls.noon_end.length) {
-    const best = getBestShift(times, dept, dayIdx, processedDays);
+    const best = getBestShift(times, dept);
     if (best) {
       const [h, m] = best.start.split(':').map(Number);
       morningStart = {h, m};
@@ -3862,7 +3298,7 @@ function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
   if (!times.length) return {attendanceDays:0, paidDays:0, overtimeHours:0, halfDay:false};
 
   // 出勤天数：取匹配班次的 day_val（全天=1 / 半天=0.5）；无法匹配时用打卡分布兜底
-  const matchedShift = getBestShift(times, dept, dayIdx, processedDays);
+  const matchedShift = getBestShift(times, dept);
   let attendanceDays;
   if (matchedShift && typeof matchedShift.day_val === 'number') {
     attendanceDays = matchedShift.day_val;
@@ -3901,8 +3337,6 @@ function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
 // 缺卡计算
 function calcMissingCards(times, dept) {
   if (!times.length) return {count:0, types:[]};
-  // 保安/保洁：不计算缺卡（不标红、不标记缺卡）
-  if (dept.includes('保安') || dept.includes('卫生')) return {count:0, types:[]};
 
   // 保安/卫生组06:30上班，05:xx可能是早到，不算凌晨卡
   const midCutoff = (dept.includes('保安') || dept.includes('卫生')) ? 5 : 6;
@@ -3941,14 +3375,12 @@ function calcMissingCards(times, dept) {
       if (!hasAfStart && !hasNoonArr) { count++; types.push('afternoon_start'); }
       if (!hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_end'); }
     }
-    // 2026-08-14 修正（其二）：常规加班（已打「下午下班卡 afternoon_end」+「加班下班卡 overtime_end」）
-    // 不再把 overtime_start（17:50-18:00 的"加班上班卡"）当作必打卡点——绝大多数加班员工并不单独打这张边界卡。
-    // 2026-08-16 精细化：但当「只有 1 张同天晚间卡且已晋升为 overtime_end、同时没有 afternoon_end」时
-    // （即单卡超时下班场景，如 08:00 / 12:03 / 12:34 / 19:00，19:00 距 18:00 加班起算满 1h → 算加班 1h），
-    // 此时既没有正常下班打卡、也没有加班上班打卡，应判 2 次缺卡：下午下班卡 + 加班上班卡。
-    // 仅当 overtime_end 中存在"同天卡(h>=5)"时才适用，避免误伤真正跨天夜班（其加班卡为凌晨 h<5，本无下午/加班边界卡概念）。
-    const hasSameDayOt = cls.overtime_end.some(t => t.h >= 5);
-    if (hasOtEnd && hasSameDayOt && !cls.overtime_start.length && !hasAfEnd) { count++; types.push('overtime_start'); }
+    // 2026-08-14 修正（其二）：不再把 overtime_start（17:50-18:00 的"加班上班卡"）当作必打卡点。
+    // 原因：绝大多数加班员工的真实行为是「打下班卡(17:30前后) → 直接打加班下班卡(22:xx)」，
+    // 中间并不单独打一张 17:50-18:00 的"加班上班卡"。若强行要求，会导致所有加班人员被误判 1 次缺卡（非常多人、跨部门）。
+    // 加班是否发生由 afternoon_end + overtime_end 即可判定，加班起算时间按班次下班/18:00 计算，无需这张卡。
+    // 因此此处不再计入缺卡（如需强制要求该边界卡，恢复下方注释行即可）。
+    // if (hasOtEnd && !cls.overtime_start.length && hasAfEnd) { count++; types.push('overtime_start'); }
   } else if (hasMornCard) {
     const mornCards = normal.filter(t=>t.h<13);
     if (mornCards.length >= 2) {}
@@ -3962,35 +3394,34 @@ function calcMissingCards(times, dept) {
 
 // 凌晨卡跨天处理
 function preprocessCrossMidnight(empDays, dept) {
-  const processed = [...empDays];
+  const processed = (empDays || []).map(d => d); // 浅拷贝，绝不改动原始显示数据(rawDays)
   const isWeisheng = dept && dept.includes('卫生');
-  const midCutoff = isWeisheng ? 5 : 6;
-  // 首日凌晨卡处理
-  if (processed.length && processed[0]) {
-    const day0Times = parseTimes(processed[0]);
-    const midnights = day0Times.filter(t=>t.h<midCutoff);
-    const normals = day0Times.filter(t=>t.h>=midCutoff);
-    if (midnights.length && normals.length) {
-      processed[0] = normals.sort((a,b)=>timeToMin(a)-timeToMin(b)).map(t=>`${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`).join('\n');
+  const LINGCHEN = 5; // 凌晨卡阈值(h<5)：与 classifyPunchTimes / computeOvertimeHours 完全一致
+  const parse = (s) => parseTimes(s || '').filter(Boolean);
+
+  // ── 规则（写死，用户明确指令）──
+  // ① 凌晨卡(h<5) = 前一天(昨天)的下班卡，算成昨天的下班时间。
+  // ② 第 d 天(0-based)的「昨天下班卡」= 第 d+1 天里的凌晨卡，归并到当天参与昨天的加班/工时计算(按 +24h 处理)。
+  // ③ 显示单元格使用 rawDays(原始数据)，凌晨卡始终留在它被打的那一天(第 d+1 天)的单元格，绝不挪动。
+  // ④ 第 0 天自身的凌晨卡属上月(无前一日)，直接丢弃；当天自身凌晨卡不计入当天、留待其前一日结算。
+  for (let d = 0; d < processed.length; d++) {
+    const todayAll = parse(processed[d]);
+    const normals = todayAll.filter(t => t.h >= LINGCHEN); // 当天自身正常卡（不含凌晨）
+    let cards = normals.slice();
+    // 昨天(第 d 天)的下班卡 = 第 d+1 天的凌晨卡
+    if (d + 1 < processed.length) {
+      const nextLingchen = parse(processed[d + 1]).filter(t => t.h < LINGCHEN);
+      for (const t of nextLingchen) cards.push(t);
     }
-  }
-  // 铁律（2026-08-19）：凌晨打卡(h<midCutoff，如 00:36) 只能是前一工作日的下班卡，
-  // 公司绝对没有凌晨上班。因此任何一天的凌晨卡一律上挂到前一天(其所属工作日的起始日)，
-  // 不参与当日考勤(不计入当日加班、不作为当日下班卡、不触发当日早退/迟到)。
-  for (let d = 1; d < processed.length; d++) {
-    const dayTimes = parseTimes(processed[d]);
-    if (!dayTimes.length) continue;
-    const midnights = dayTimes.filter(t => t.h < midCutoff);
-    if (!midnights.length) continue;
-    const prevTimes = parseTimes(processed[d-1] || '');
-    const newPrev = [...prevTimes, ...midnights].sort((a,b)=>{
-      const ka = a.h<midCutoff ? 1440 + timeToMin(a) : timeToMin(a);
-      const kb = b.h<midCutoff ? 1440 + timeToMin(b) : timeToMin(b);
+    // 排序：凌晨卡(+24h)放最后，使其成为 classifyPunchTimes 识别的 overtime_end(跨天下班卡)
+    cards.sort((a, b) => {
+      const ka = a.h < LINGCHEN ? 1440 + timeToMin(a) : timeToMin(a);
+      const kb = b.h < LINGCHEN ? 1440 + timeToMin(b) : timeToMin(b);
       return ka - kb;
     });
-    const newToday = dayTimes.filter(t => !(t.h < midCutoff));
-    processed[d-1] = newPrev.length ? newPrev.map(t=>`${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`).join('\n') : '';
-    processed[d] = newToday.length ? newToday.map(t=>`${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`).join('\n') : '';
+    processed[d] = cards.length
+      ? cards.map(t => `${String(t.h).padStart(2, '0')}:${String(t.m).padStart(2, '0')}`).join('\n')
+      : (processed[d] || '');
   }
   return processed;
 }
@@ -4329,10 +3760,6 @@ function processEmployee(emp) {
   const isNoOt = dept.includes('保安') || dept.includes('卫生');
   const processedDays = preprocessCrossMidnight([...emp.days], dept);
 
-  // 按人聚类定基准班次：用整月模式确定该员工专属的 1~N 个基准班次，供迟到判定与出勤/加班计算统一使用
-  emp._baseShifts = computeEmployeeBaseShifts(emp, processedDays);
-  EMP_CTX = { baseShifts: emp._baseShifts || [] };
-
   const stats = {
     name: emp.name, id: emp.id, dept,
     平时出勤天数:0, 平时加班工时:0, 周末天数:0, 周末加班工时:0,
@@ -4356,15 +3783,10 @@ function processEmployee(emp) {
       stats.earlyDaily.push(false); stats.earlyPunchDaily.push(null);
       continue;
     }
-    const bf = stripBreakfastTimes(parseTimes(timesStr), dept);
-    let times = bf.times;
-    const breakfastMissing = bf.breakfastMissing;
+    let times = parseTimes(timesStr);
     if (!times.length) {
       stats.overtimeDaily.push(0); stats.isWeekendDaily.push(false);
-      stats.lateDaily.push(false); stats.latePunchDaily.push(null);
-      stats.missingDaily.push(breakfastMissing ? ['breakfast_missing'] : []);
-      stats.缺卡次数 += breakfastMissing ? 1 : 0;
-      stats.halfDayDaily.push(false);
+      stats.lateDaily.push(false); stats.latePunchDaily.push(null); stats.missingDaily.push([]); stats.halfDayDaily.push(false);
       stats.earlyDaily.push(false); stats.earlyPunchDaily.push(null);
       continue;
     }
@@ -4408,58 +3830,35 @@ function processEmployee(emp) {
         }
       }
     } else if (normalTimes.length) {
-      // 迟到判断：优先用员工整月基准班次(与早退同源)，避免逐日匹配漂移误判。
-      // 员工基准班次由"到达+离开"双重拟合确定(见 computeEmployeeBaseShifts/inferDayShiftBySpan)，
-      // 能稳定识别真实班次（如 06:30 班偶发 7 点后到 → 仍归 06:30，迟到精准标红、不与 07:00 班混淆）。
+      // 迟到判断：用班次匹配推断出的上班时间作为基准
+      // 班次匹配用四条件法（能上满→最接近→优先不迟到→卡型吻合），比部门最早start更精准
+      // 上7:58匹配到8:00班 → 不迟到；上7:48匹配到8:00班 → 不迟到
       const hasMorn = normalTimes.some(t=>t.h<12);
       if (hasMorn) {
         const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
-        const fMin = timeToMin(first);
-        let shiftStart = null;
-        const baseShift = resolveShiftForDay(emp, times, dept, dayIdx, processedDays);
-        if (baseShift) {
-          const bMin = parseShiftTime(baseShift.start);
-          shiftStart = {h: Math.floor(bMin/60), m: bMin%60};
-        }
-        if (!shiftStart) {
-          const best = getBestShift(times, dept, dayIdx, processedDays);
-          if (best && best.start) {
-            const [bh, bm] = best.start.split(':').map(Number);
-            shiftStart = {h: bh, m: bm};
-          }
-        }
-        if (!shiftStart) {
-          const lateStartStr = employeeLateBaseStart(emp, fMin);
-          if (lateStartStr) {
-            const bMin = parseShiftTime(lateStartStr);   // 按人聚类众数基准比对，准确区分早到/迟到
-            shiftStart = {h: Math.floor(bMin/60), m: bMin%60};
-          }
-        }
-        if (!shiftStart) shiftStart = getShiftStartFromDept(times, dept);
+        const shiftStart = getShiftStartFromDept(times, dept);
         if (timeToMin(first) > timeToMin(shiftStart)) {
           late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
           lateMin = timeToMin(first) - timeToMin(shiftStart);
         }
       }
     }
-    // 早退判断：基准=员工整月基准班次下班时间(matched.end，跨天班次 00:30 等按次日 +24h)
-    // 优先用整月基准(与迟到同源)，避免逐日匹配漂移把 06:30 班员工误判为 07:00 班而错标早退。
+    // 早退判断：基准=匹配班次下班时间(matched.end，跨天班次 00:30 等按次日 +24h)
     // 取 afternoon_end / afternoon_start 中的最晚卡作为"下班卡"；若它早于班次下班、且当天没有晚于班次下班的卡(含加班/晚走) → 记为早退
     // 例：CAM 06:30-16:00 班次，16:03 下班 = 比 16:00 晚 3 分钟 → 正常下班，不判早退
     let early=false, earlyPunch=null, earlyMin=0;
     {
-      const matched = resolveShiftForDay(emp, times, dept, dayIdx, processedDays) || getBestShift(times, dept, dayIdx, processedDays);
+      const matched = getBestShift(times, dept);
       if (matched && matched.end) {
         let shiftEndMin = parseShiftTime(matched.end);
         if (shiftEndMin !== null) {
           if (shiftEndMin <= 30) shiftEndMin += 24*60; // 跨天班次(00:30 等)按次日
           const clsE = adjustClassified(classifyPunchTimes(times), dept, times);
           // 下班卡取 afternoon_end / afternoon_start / overtime_end 中的最晚一张（含晚班 23:00 这类被分到 overtime_end 的早退）
-          const depCards = clsE.afternoon_end.concat(clsE.overtime_end);
+          const depCards = clsE.afternoon_end.concat(clsE.afternoon_start, clsE.overtime_end);
           if (depCards.length) {
-            const toMinX = (t)=>{ let m=timeToMin(t); if (t.h<5) m+=24*60; return m; };
-            const lastDep = depCards.reduce((a,b)=>toMinX(a)>=toMinX(b)?a:b);
-            const lastDepMin = toMinX(lastDep);
+            const lastDep = depCards.reduce((a,b)=>timeToMin(a)>=timeToMin(b)?a:b);
+            const lastDepMin = timeToMin(lastDep);
             if (lastDepMin < shiftEndMin) {
               // 当天是否有晚于班次下班的卡（加班/晚走）→ 若有则不判早退
               const hasLater = times.some(t => { let tm=timeToMin(t); if (t.h<5) tm+=24*60; return tm > shiftEndMin; });
@@ -4492,22 +3891,23 @@ function processEmployee(emp) {
     stats.overtimeDaily.push(overtimeHours);
     stats.halfDayDaily.push(halfDay);
 
-    // 0-3点统计（所有人包括保安/卫生组）
-    if (times.length) {
-      const last = times[times.length-1];
-      if (last.h < 6) {
-        if (last.h===0) stats['0点']++; else if (last.h===1) stats['1点']++;
-        else if (last.h===2) stats['2点']++; else if (last.h===3) stats['3点']++;
+    // 0-3点统计（所有人包括保安/卫生组）—— 用原始单元格数据，凌晨卡归其真实打卡日
+    if (emp.days && emp.days[dayIdx]) {
+      const rawTimes = parseTimes(emp.days[dayIdx]);
+      if (rawTimes.length) {
+        const last = rawTimes[rawTimes.length-1];
+        if (last.h < 6) {
+          if (last.h===0) stats['0点']++; else if (last.h===1) stats['1点']++;
+          else if (last.h===2) stats['2点']++; else if (last.h===3) stats['3点']++;
+        }
       }
     }
 
     // 缺卡
-    let {count: mc, types: mt} = calcMissingCards(times, dept);
-    if (breakfastMissing) { mc += 1; mt = mt.concat('breakfast_missing'); }
+    const {count: mc, types: mt} = calcMissingCards(times, dept);
     stats.缺卡次数 += mc;
     stats.missingDaily.push(mt);
   }
-  EMP_CTX = null;  // 释放员工上下文，避免影响后续处理/其他调用方
 
   stats.有薪天数 = stats.平时出勤天数 + stats.周末天数 + stats.法定假日天数 + stats.调休天数;
   stats.加班总时长 = stats.平时加班工时 + stats.周末加班工时;
@@ -4910,4 +4310,3 @@ async function exportExcel() {
 </script>
 </body>
 </html>
-
