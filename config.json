@@ -239,6 +239,14 @@
         "net_h": 8,
         "day_val": 1,
         "ot_base": "17:30"
+      },
+      {
+        "start": "15:30",
+        "end": "00:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:00",
+        "break_min": 30
       }
     ],
     "CAM-氧化锆切削（4楼）": [
@@ -300,6 +308,21 @@
         "day_val": 0.5,
         "ot_base": "19:30",
         "break_min": 30
+      },
+      {
+        "start": "06:30",
+        "end": "16:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:00"
+      },
+      {
+        "start": "15:30",
+        "end": "00:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:00",
+        "break_min": 30
       }
     ],
     "CAM-氧化锆切削（C栋）": [
@@ -360,6 +383,21 @@
         "net_h": 4,
         "day_val": 0.5,
         "ot_base": "12:00"
+      },
+      {
+        "start": "06:30",
+        "end": "16:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:00"
+      },
+      {
+        "start": "15:30",
+        "end": "00:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:00",
+        "break_min": 30
       }
     ],
     "保安组": [
