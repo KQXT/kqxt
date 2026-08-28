@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.25-26.08.26.19:37</div>
+    <div class="version">v2.26-26.08.28.08:03</div>
   </div>
 </div>
 
@@ -3868,8 +3868,21 @@ function processEmployee(emp) {
         if (shiftEndMin !== null) {
           if (shiftEndMin <= 30) shiftEndMin += 24*60; // 跨天班次(00:30 等)按次日
           const clsE = adjustClassified(classifyPunchTimes(times), dept, times);
-          // 下班卡取 afternoon_end / afternoon_start / overtime_end 中的最晚一张（含晚班 23:00 这类被分到 overtime_end 的早退）
-          const depCards = clsE.afternoon_end.concat(clsE.afternoon_start, clsE.overtime_end);
+          // 下班卡判定（2026-08-27 修复：下午上班卡误标早退）：
+          //   1) 优先取明确的「下午下班卡(afternoon_end)」与「加班下班卡(overtime_end)」作为下班卡；
+          //   2) 若没有上述明确下班卡、但存在 ≥2 张下午卡（典型：13:30 上班 + 16:00 提前下班），
+          //      才把最晚那张下午卡当作"提前下班"判早退；
+          //   3) 若只有 1 张下午上班卡、其后无任何下班卡（如 13:11 上班后忘打下班卡），
+          //      这是"下午来了没打下班卡"，由缺卡逻辑标红，不再误判成早退。
+          const realDep = clsE.afternoon_end.concat(clsE.overtime_end);
+          let depCards;
+          if (realDep.length) {
+            depCards = realDep;
+          } else if (clsE.afternoon_start.length >= 2) {
+            depCards = [clsE.afternoon_start[clsE.afternoon_start.length - 1]];
+          } else {
+            depCards = [];
+          }
           if (depCards.length) {
             const lastDep = depCards.reduce((a,b)=>timeToMin(a)>=timeToMin(b)?a:b);
             const lastDepMin = timeToMin(lastDep);
