@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.26-26.08.28.08:03</div>
+    <div class="version">v2.27-26.08.28.14:16</div>
   </div>
 </div>
 
@@ -2976,7 +2976,8 @@ function classifyPunchTimes(times) {
   noonBuffer.sort((a,b) => a.idx - b.idx);
   const gapFlags = [false];
   for (let i = 1; i < noonBuffer.length; i++) {
-    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) > 5);
+    // 2026-08-28 调整：中午 12:00-13:30，相邻卡间隔 >=15 分钟才算 2 次卡（下班+上班），否则视为 1 次卡
+    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) >= 15);
   }
   let noonCount = 0;
   for (let i = 0; i < noonBuffer.length; i++) {
@@ -3007,11 +3008,11 @@ function classifyPunchTimes(times) {
     result.overtime_end = result.overtime_end.filter(t => t.h < 5); // 仅保留跨天凌晨卡（本分支已排除）
   }
 
-  // 17:30-18:00 双打卡处理（2026-08-14）：
+  // 17:30-18:00 双打卡处理（2026-08-28 调整）：
   // 单打卡：已在上面统一归 afternoon_end（一律视为下午下班卡，不存在"单独一张加班上班卡"的情形）。
-  // 该区间若打 2 次及以上卡，且相邻最大间隔 >= 8 分钟 → 视为「下午下班卡 + 晚上加班上班卡」：
+  // 该区间若打 2 次及以上卡，且相邻最大间隔 >= 5 分钟 → 视为「下午下班卡 + 晚上加班上班卡」：
   //   间隔之前的归 afternoon_end（下班），间隔之后的归 overtime_start（加班上班）。
-  // 若相邻间隔均 < 8 分钟 → 视为重复打卡，合并为一张（保留最早一张，归 afternoon_end）。
+  // 若相邻间隔均 < 5 分钟 → 视为重复打卡，合并为一张（保留最早一张，归 afternoon_end）。
   const getoff = [...result.afternoon_end, ...result.overtime_start]
     .filter(t => { const m = timeToMin(t); return m >= 17*60+30 && m < 18*60; })
     .sort((a,b)=>timeToMin(a)-timeToMin(b));
@@ -3021,7 +3022,7 @@ function classifyPunchTimes(times) {
       const g = timeToMin(getoff[i]) - timeToMin(getoff[i-1]);
       if (g > maxGap) { maxGap = g; splitIdx = i; }
     }
-    if (maxGap >= 8) {
+    if (maxGap >= 5) {
       result.afternoon_end = getoff.slice(0, splitIdx);
       result.overtime_start = getoff.slice(splitIdx);
     } else {
