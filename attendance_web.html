@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.30-26.08.30.08:40</div>
+    <div class="version">v2.31-26.08.30.11:00</div>
   </div>
 </div>
 
@@ -3782,35 +3782,42 @@ async function startProcess() {
   document.getElementById('progressArea').classList.remove('hidden');
   setProgress(0, '加载班次配置...');
 
-  // 先加载config.json
-  const loaded = await loadConfig();
-  if (!loaded) {
-    document.getElementById('btnProcess').disabled = false;
-    logMsg('err', '无法加载班次配置，请检查config.json文件是否存在');
-    return;
-  }
-
-  setProgress(0, '开始处理...');
-  empStats = [];
-
-  const total = employees.length;
-  for (let i = 0; i < total; i++) {
-    if (i % 20 === 0) {
-      setProgress(Math.round(i/total*90), `处理第 ${i+1}/${total} 名员工...`);
-      await new Promise(r => setTimeout(r, 0));
+  try {
+    // 先加载config.json
+    const loaded = await loadConfig();
+    if (!loaded) {
+      document.getElementById('btnProcess').disabled = false;
+      logMsg('err', '无法加载班次配置，请检查config.json文件是否存在');
+      return;
     }
-    empStats.push(processEmployee(employees[i]));
-  }
 
-  setProgress(95, '生成预览...');
-  await new Promise(r => setTimeout(r, 0));
-  renderSummary();
-  renderPreview();
-  setProgress(100, '处理完成！');
-  document.getElementById('btnExport').disabled = false;
-  document.getElementById('summaryCard').classList.remove('hidden');
-  document.getElementById('previewCard').classList.remove('hidden');
-  logMsg('ok', `处理完成！共 ${total} 名员工`);
+    setProgress(0, '开始处理...');
+    empStats = [];
+
+    const total = employees.length;
+    for (let i = 0; i < total; i++) {
+      // 每处理5人就刷新一次进度条，避免长时间卡在0%让用户误以为卡住
+      if (i % 5 === 0) {
+        setProgress(Math.round(i/total*90), `处理第 ${i+1}/${total} 名员工...`);
+        await new Promise(r => setTimeout(r, 0));
+      }
+      empStats.push(processEmployee(employees[i]));
+    }
+
+    setProgress(95, '生成预览...');
+    await new Promise(r => setTimeout(r, 0));
+    renderSummary();
+    renderPreview();
+    setProgress(100, '处理完成！');
+    document.getElementById('btnExport').disabled = false;
+    document.getElementById('summaryCard').classList.remove('hidden');
+    document.getElementById('previewCard').classList.remove('hidden');
+    logMsg('ok', `处理完成！共 ${total} 名员工`);
+  } catch (err) {
+    console.error('处理过程出错:', err);
+    logMsg('err', '处理过程出错：' + (err && err.message ? err.message : String(err)));
+    document.getElementById('btnProcess').disabled = false;
+  }
 }
 
 function processEmployee(emp) {
