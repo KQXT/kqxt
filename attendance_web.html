@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.40-26.08.30.18:55</div>
+    <div class="version">v2.41-26.08.30.18:45</div>
   </div>
 </div>
 
@@ -3975,16 +3975,37 @@ function processEmployee(emp) {
         }
       }
     } else if (normalTimes.length) {
-      // 迟到判断：用班次匹配推断出的上班时间作为基准
-      // 班次匹配用四条件法（能上满→最接近→优先不迟到→卡型吻合），比部门最早start更精准
-      // 上7:58匹配到8:00班 → 不迟到；上7:48匹配到8:00班 → 不迟到
-      const hasMorn = normalTimes.some(t=>t.h<12);
-      if (hasMorn) {
-        const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
-        const shiftStart = getShiftStartFromDept(times, dept);
-        if (timeToMin(first) > timeToMin(shiftStart)) {
-          late=true; latePunch=`${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
-          lateMin = timeToMin(first) - timeToMin(shiftStart);
+      // 迟到判断：用匹配到的最佳班次上班点(start)作为基准。
+      // 上7:58匹配到8:00班 → 不迟到；上7:48匹配到8:00班 → 不迟到。
+      // 关键修正（v2.41）：迟到不限于上午班——下午班/晚班(如13:30起、15:30起的班次)同样要判迟到。
+      // 上班卡 = 当天第一张卡；仅当它更接近「班次上班点」而非「班次下班点」时才视为上班卡，
+      // 避免「只打了下班卡漏打上班卡」的场景被误判成迟到（那种归缺卡逻辑标红）。
+      const matched = getBestShift(times, dept);
+      if (matched) {
+        const sMin = parseShiftTime(matched.start);
+        let eMin = parseShiftTime(matched.end);
+        if (eMin !== null && eMin <= 30) eMin += 24*60; // 跨天班次(00:00/00:30)按次日
+        const first = normalTimes.reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+        const fMin = timeToMin(first);
+        const distStart = Math.abs(fMin - sMin);
+        const distEnd = (eMin === null) ? Infinity : Math.abs(fMin - eMin);
+        // 第一张卡更靠近上班点 → 视为上班卡，可判迟到
+        // 需至少2张有效卡，避免「只打了一张下班卡(漏打上班卡)」被误判成迟到一大截（那种归缺卡逻辑）
+        if (normalTimes.length >= 2 && distStart <= distEnd && fMin > sMin) {
+          late = true;
+          latePunch = `${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
+          lateMin = fMin - sMin;
+        }
+      } else {
+        // 兜底（极少触发）：沿用部门最早上班点，仅上午卡判迟到
+        const hasMorn = normalTimes.some(t=>t.h<12);
+        if (hasMorn) {
+          const first = normalTimes.filter(t=>t.h<12).reduce((a,b)=>timeToMin(a)<=timeToMin(b)?a:b);
+          const shiftStart = getShiftStartFromDept(times, dept);
+          if (timeToMin(first) > timeToMin(shiftStart)) {
+            late = true; latePunch = `${String(first.h).padStart(2,'0')}:${String(first.m).padStart(2,'0')}`;
+            lateMin = timeToMin(first) - timeToMin(shiftStart);
+          }
         }
       }
     }
@@ -4013,7 +4034,7 @@ function processEmployee(emp) {
           if (e !== null) shiftEndMin = (e <= 30) ? e + 24*60 : e; // 跨天班次(00:30 等)按次日
         }
       }
-      if (shiftEndMin !== null) {
+      if (shiftEndMin !== null && normalTimes.length >= 2) {
         const clsE = adjustClassified(classifyPunchTimes(times, dept), dept, times);
         // 下班卡判定（2026-08-27 修复：下午上班卡误标早退）：
         //   1) 优先取明确的「下午下班卡(afternoon_end)」与「加班下班卡(overtime_end)」作为下班卡；
