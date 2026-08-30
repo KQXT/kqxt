@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.37-26.08.30.17:35</div>
+    <div class="version">v2.38-26.08.30.18:30</div>
   </div>
 </div>
 
@@ -616,7 +616,7 @@ const DEFAULT_CONFIG = {
     "保安组": [
       {
         "start": "06:30",
-        "end": "17:30",
+        "end": "17:40",
         "net_h": 9.5,
         "day_val": 1,
         "no_ot": true
@@ -2776,7 +2776,7 @@ function inferShiftFromDept(times, dept, useUniversal) {
     return Math.abs(e - lastMeters);
   };
   // 卡型吻合度打分（全天/半天/夜班区分），用于 start 距离相同、卡型可区分时的优先级
-  const cls = classifyPunchTimes(times);
+  const cls = classifyPunchTimes(times, dept);
   const hasMornCard = cls.morning_start.length > 0;
   const hasNoonCard = cls.noon_end.length > 0;
   const hasAftStart = cls.afternoon_start.length > 0;
@@ -2946,9 +2946,10 @@ function getShiftStartFromDept(times, dept) {
 }
 
 // 打卡分类
-function classifyPunchTimes(times) {
+function classifyPunchTimes(times, dept) {
   const result = {morning_start:[], noon_end:[], afternoon_start:[], afternoon_end:[], overtime_start:[], overtime_end:[]};
   if (!times.length) return result;
+  const isSecurity = !!(dept && dept.includes('保安'));
 
   const hasNormal = times.some(t => t.h >= 5);
   const midnightIndices = new Set();
@@ -2960,24 +2961,35 @@ function classifyPunchTimes(times) {
   }
 
   const noonBuffer = [];
+  const eveningBuffer = [];   // 保安组晚班晚餐窗 17:20-17:40 双打卡缓冲
   for (let idx = 0; idx < times.length; idx++) {
     const t = times[idx];
     const tm = timeToMin(t);
     if (midnightIndices.has(idx)) { result.overtime_end.push(t); continue; }
-    if (tm < 12 * 60) { result.morning_start.push(t); }
-    else if (tm < 13 * 60 + 30) { noonBuffer.push({idx, t}); }
-    else if (tm < 17 * 60 + 30) { result.afternoon_start.push(t); }
-    // 17:30-18:00 先统一归 afternoon_end；是否为"加班上班卡(overtime_start)"由下方双打卡逻辑按间隔再拆。
-    // 单打卡时一律视为下午下班卡（不应在没有下班卡的情况下单独出现"加班上班卡"）。
-    else if (tm < 18 * 60) { result.afternoon_end.push(t); }
-    else { result.overtime_end.push(t); }
+    if (isSecurity) {
+      // 保安组特殊作息：早班午间 11:50-12:10 吃饭打2次卡，晚班晚间 17:20-17:40 吃饭打2次卡
+      if (tm < 11 * 60 + 50) { result.morning_start.push(t); }
+      else if (tm < 12 * 60 + 10) { noonBuffer.push({idx, t}); }
+      else if (tm < 17 * 60 + 20) { result.afternoon_start.push(t); }
+      else if (tm <= 17 * 60 + 40) { eveningBuffer.push({idx, t}); }
+      else if (tm < 18 * 60) { result.afternoon_end.push(t); }
+      else { result.overtime_end.push(t); }
+    } else {
+      if (tm < 12 * 60) { result.morning_start.push(t); }
+      else if (tm < 13 * 60 + 30) { noonBuffer.push({idx, t}); }
+      else if (tm < 17 * 60 + 30) { result.afternoon_start.push(t); }
+      // 17:30-18:00 先统一归 afternoon_end；是否为"加班上班卡(overtime_start)"由下方双打卡逻辑按间隔再拆。
+      // 单打卡时一律视为下午下班卡（不应在没有下班卡的情况下单独出现"加班上班卡"）。
+      else if (tm < 18 * 60) { result.afternoon_end.push(t); }
+      else { result.overtime_end.push(t); }
+    }
   }
 
   noonBuffer.sort((a,b) => a.idx - b.idx);
   const gapFlags = [false];
   for (let i = 1; i < noonBuffer.length; i++) {
-    // 2026-08-28 调整：中午 12:00-13:30，相邻卡间隔 >=15 分钟才算 2 次卡（下班+上班），否则视为 1 次卡
-    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) >= 15);
+    // 中午双打卡阈值：其它部门 12:00-13:30 间隔>=15 分算2次卡；保安组早班 11:50-12:10 间隔>=5 分即算2次卡
+    gapFlags.push(timeToMin(noonBuffer[i].t) - timeToMin(noonBuffer[i-1].t) >= (isSecurity ? 5 : 15));
   }
   let noonCount = 0;
   for (let i = 0; i < noonBuffer.length; i++) {
@@ -2991,6 +3003,26 @@ function classifyPunchTimes(times) {
       if (noonCount > 0) { result.afternoon_start.push(t); }
       else if (i + 1 < noonBuffer.length) { result.noon_end.push(t); noonCount++; }
       else result.afternoon_start.push(t);
+    }
+  }
+  // 保安组晚班晚餐窗 17:20-17:40 双打卡处理：间隔>=5分 → 下午下班卡(17:20) + 晚上加班上班卡(17:40)
+  if (isSecurity && eveningBuffer.length) {
+    eveningBuffer.sort((a,b)=>a.idx-b.idx);
+    if (eveningBuffer.length >= 2) {
+      let maxGap = 0, splitIdx = 1;
+      for (let i = 1; i < eveningBuffer.length; i++) {
+        const g = timeToMin(eveningBuffer[i].t) - timeToMin(eveningBuffer[i-1].t);
+        if (g > maxGap) { maxGap = g; splitIdx = i; }
+      }
+      if (maxGap >= 5) {
+        result.afternoon_end = result.afternoon_end.concat(eveningBuffer.slice(0, splitIdx).map(x => x.t));
+        result.overtime_start = result.overtime_start.concat(eveningBuffer.slice(splitIdx).map(x => x.t));
+      } else {
+        result.afternoon_end = result.afternoon_end.concat([eveningBuffer[0].t]);
+      }
+    } else {
+      // 仅1张晚餐卡：视为下午下班卡
+      result.afternoon_end = result.afternoon_end.concat(eveningBuffer.map(x => x.t));
     }
   }
   // 2026-08-14 修正（其五）的修正：单张晚间卡是否算加班，取决于当天是否已有"完整工作日"信号。
@@ -3013,6 +3045,8 @@ function classifyPunchTimes(times) {
   // 该区间若打 2 次及以上卡，且相邻最大间隔 >= 5 分钟 → 视为「下午下班卡 + 晚上加班上班卡」：
   //   间隔之前的归 afternoon_end（下班），间隔之后的归 overtime_start（加班上班）。
   // 若相邻间隔均 < 5 分钟 → 视为重复打卡，合并为一张（保留最早一张，归 afternoon_end）。
+  // 保安组走上方 17:20-17:40 专属晚餐窗逻辑，此处跳过。
+  if (!isSecurity) {
   const getoff = [...result.afternoon_end, ...result.overtime_start]
     .filter(t => { const m = timeToMin(t); return m >= 17*60+30 && m < 18*60; })
     .sort((a,b)=>timeToMin(a)-timeToMin(b));
@@ -3029,6 +3063,7 @@ function classifyPunchTimes(times) {
       result.afternoon_end = [getoff[0]];
       result.overtime_start = [];
     }
+  }
   }
   for (const k of Object.keys(result)) result[k].sort((a,b) => timeToMin(a)-timeToMin(b));
   return result;
@@ -3131,7 +3166,7 @@ function inferMissingMorningStart(dayIdx, processedDays, dept) {
     if (!ts || ts.trim() === '' || ts.trim() === '-') return null;
     let times = parseTimes(ts);
     times = dedupTimes(times);
-    const cls = classifyPunchTimes(times);
+    const cls = classifyPunchTimes(times, dept);
     if (cls.morning_start.length) {
       return getShiftStartFromDept(times, dept);
     }
@@ -3230,13 +3265,13 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
       if (totalH < 0) totalH = 0;
     }
     // 加班：从 ot_base（班次正常下班）之后算起（与主线一致）
-    const cls2 = classifyPunchTimes(times);
+    const cls2 = classifyPunchTimes(times, dept);
     const nightH = computeOvertimeHours(cls2, matchedShift, dept, times);
     return {morning:0, afternoon:totalH, night:nightH, total:totalH + nightH};
   }
 
   // 正常（有上午卡）
-  let cls = classifyPunchTimes(times);
+  let cls = classifyPunchTimes(times, dept);
   cls = adjustClassified(cls, dept, times);
 
   let mornHours=0, afHours=0, nightHours=0;
@@ -3406,7 +3441,7 @@ function calcMissingCards(times, dept) {
 
   let count=0, types=[];
   if (hasAfCard) {
-    let cls = classifyPunchTimes(times);
+    let cls = classifyPunchTimes(times, dept);
     cls = adjustClassified(cls, dept, times);
     const hasMornStart = cls.morning_start.length > 0;
     const hasNoonEnd = cls.noon_end.length > 0;
@@ -3924,40 +3959,55 @@ function processEmployee(emp) {
     // 例：CAM 06:30-16:00 班次，16:03 下班 = 比 16:00 晚 3 分钟 → 正常下班，不判早退
     let early=false, earlyPunch=null, earlyMin=0;
     {
-      const matched = getBestShift(times, dept);
-      if (matched && matched.end) {
-        let shiftEndMin = parseShiftTime(matched.end);
-        if (shiftEndMin !== null) {
-          if (shiftEndMin <= 30) shiftEndMin += 24*60; // 跨天班次(00:30 等)按次日
-          const clsE = adjustClassified(classifyPunchTimes(times), dept, times);
-          // 下班卡判定（2026-08-27 修复：下午上班卡误标早退）：
-          //   1) 优先取明确的「下午下班卡(afternoon_end)」与「加班下班卡(overtime_end)」作为下班卡；
-          //   2) 若没有上述明确下班卡、但存在 ≥2 张下午卡（典型：13:30 上班 + 16:00 提前下班），
-          //      才把最晚那张下午卡当作"提前下班"判早退；
-          //   3) 若只有 1 张下午上班卡、其后无任何下班卡（如 13:11 上班后忘打下班卡），
-          //      这是"下午来了没打下班卡"，由缺卡逻辑标红，不再误判成早退。
-          const realDep = clsE.afternoon_end.concat(clsE.overtime_end);
-          let depCards;
-          if (realDep.length) {
-            depCards = realDep;
-          } else if (clsE.afternoon_start.length >= 2) {
-            depCards = [clsE.afternoon_start[clsE.afternoon_start.length - 1]];
-          } else {
-            depCards = [];
-          }
-          if (depCards.length) {
-            // 跨午夜下班卡按次日算：00:00 不是 0 点，而是 24:00
-            const norm = (t) => timeToMin(t) + (t.h < 5 ? 24*60 : 0);
-            const lastDep = depCards.reduce((a,b)=>norm(a)>=norm(b)?a:b);
-            const lastDepMin = norm(lastDep);
-            if (lastDepMin < shiftEndMin) {
-              // 当天是否有晚于班次下班的卡（加班/晚走）→ 若有则不判早退
-              const hasLater = times.some(t => norm(t) > shiftEndMin);
-              if (!hasLater) {
-                early=true;
-                earlyPunch=`${String(lastDep.h).padStart(2,'0')}:${String(lastDep.m).padStart(2,'0')}`;
-                earlyMin = shiftEndMin - lastDepMin;
-              }
+      // 保安组早退基准特殊处理：
+      //  - 早班(有上午卡)以部门早班配置的下班时间(06:30-17:40)为基准；
+      //  - 晚班(无上午卡，16:00-null 无固定下班时间)不判早退，否则会误匹配通用夜班 16:00-00:30 而冤枉早退。
+      let shiftEndMin = null;
+      const isSec = dept && dept.includes('保安');
+      if (isSec) {
+        const hasMorn = normalTimes.some(t => t.h < 12);
+        if (hasMorn) {
+          const secShifts = getDeptShifts(dept);
+          const es = secShifts.find(s => s.start === '06:30' && s.end);
+          if (es) { const e = parseShiftTime(es.end); if (e !== null) shiftEndMin = (e <= 30) ? e + 24*60 : e; }
+        }
+        // 晚班 hasMorn=false → shiftEndMin 保持 null，不判早退
+      } else {
+        const matched = getBestShift(times, dept);
+        if (matched && matched.end) {
+          const e = parseShiftTime(matched.end);
+          if (e !== null) shiftEndMin = (e <= 30) ? e + 24*60 : e; // 跨天班次(00:30 等)按次日
+        }
+      }
+      if (shiftEndMin !== null) {
+        const clsE = adjustClassified(classifyPunchTimes(times, dept), dept, times);
+        // 下班卡判定（2026-08-27 修复：下午上班卡误标早退）：
+        //   1) 优先取明确的「下午下班卡(afternoon_end)」与「加班下班卡(overtime_end)」作为下班卡；
+        //   2) 若没有上述明确下班卡、但存在 ≥2 张下午卡（典型：13:30 上班 + 16:00 提前下班），
+        //      才把最晚那张下午卡当作"提前下班"判早退；
+        //   3) 若只有 1 张下午上班卡、其后无任何下班卡（如 13:11 上班后忘打下班卡），
+        //      这是"下午来了没打下班卡"，由缺卡逻辑标红，不再误判成早退。
+        const realDep = clsE.afternoon_end.concat(clsE.overtime_end);
+        let depCards;
+        if (realDep.length) {
+          depCards = realDep;
+        } else if (clsE.afternoon_start.length >= 2) {
+          depCards = [clsE.afternoon_start[clsE.afternoon_start.length - 1]];
+        } else {
+          depCards = [];
+        }
+        if (depCards.length) {
+          // 跨午夜下班卡按次日算：00:00 不是 0 点，而是 24:00
+          const norm = (t) => timeToMin(t) + (t.h < 5 ? 24*60 : 0);
+          const lastDep = depCards.reduce((a,b)=>norm(a)>=norm(b)?a:b);
+          const lastDepMin = norm(lastDep);
+          if (lastDepMin < shiftEndMin) {
+            // 当天是否有晚于班次下班的卡（加班/晚走）→ 若有则不判早退
+            const hasLater = times.some(t => norm(t) > shiftEndMin);
+            if (!hasLater) {
+              early=true;
+              earlyPunch=`${String(lastDep.h).padStart(2,'0')}:${String(lastDep.m).padStart(2,'0')}`;
+              earlyMin = shiftEndMin - lastDepMin;
             }
           }
         }
