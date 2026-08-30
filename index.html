@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.33-26.08.30.15:48</div>
+    <div class="version">v2.34-26.08.30.16:28</div>
   </div>
 </div>
 
@@ -3431,7 +3431,15 @@ function calcMissingCards(times, dept) {
       const isZhiliu = dept === '翻译组（D栋）'
         && !normal.some(t => { const m = timeToMin(t); return m >= 17*60 && m < 18*60; })
         && normal.some(t => { const m = timeToMin(t); return m >= 18*60; });
-      if (!hasAfEnd && !cls.overtime_start.length && !isZhiliu) { count++; types.push('afternoon_end'); }
+      // 顺延加班（ot_base→17:30，17:00-18:00 之间打的卡）：按规则，该卡即为「加班结束+下班」，
+      // 不需要额外打"加班上班卡"，故视为已打下班卡，不判下午下班卡缺卡。
+      // 仅在 18:00 之后没有第二波加班卡时才豁免（若 18:00 后还有卡，则需按规则打 2 次卡，不在豁免范围）。
+      const earliestOt = cls.overtime_end.length
+        ? [...cls.overtime_end].sort((a,b)=>timeToMin(a)-timeToMin(b))[0] : null;
+      const earliestOtMin = earliestOt ? (earliestOt.h < 5 ? timeToMin(earliestOt)+1440 : timeToMin(earliestOt)) : -1;
+      const hasAfter18Ot = cls.overtime_end.some(t => { let m = timeToMin(t); if (t.h < 5) m += 1440; return m >= 18*60; });
+      const isZhuiyan = earliestOtMin >= 17*60 && earliestOtMin < 18*60 && !hasAfter18Ot;
+      if (!hasAfEnd && !cls.overtime_start.length && !isZhiliu && !isZhuiyan) { count++; types.push('afternoon_end'); }
     }
     // 2026-08-14 修正（其二）：不再把 overtime_start（17:50-18:00 的"加班上班卡"）当作必打卡点。
     // 原因：绝大多数加班员工的真实行为是「打下班卡(17:30前后) → 直接打加班下班卡(22:xx)」，
