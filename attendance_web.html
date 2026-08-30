@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.39-26.08.30.18:40</div>
+    <div class="version">v2.40-26.08.30.18:55</div>
   </div>
 </div>
 
@@ -2544,6 +2544,21 @@ const DEFAULT_CONFIG = {
         "net_h": 4,
         "day_val": 0.5,
         "ot_base": "17:30"
+      },
+      {
+        "start": "06:30",
+        "end": "16:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:00"
+      },
+      {
+        "start": "15:30",
+        "end": "00:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:00",
+        "break_min": 30
       }
     ]
   }
