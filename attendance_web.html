@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.32-26.08.30.15:45</div>
+    <div class="version">v2.33-26.08.30.15:48</div>
   </div>
 </div>
 
@@ -3092,7 +3092,7 @@ function adjustClassified(cls, dept, times) {
         // 该卡必须保留为加班卡，不得被早班宽限窗(ot_base+60)吞成「下午下班卡」。
         const zhiliuTimes = (times || []).filter(t => t && typeof t === 'object');
         const noCard1700_1759 = !zhiliuTimes.some(t => { const m = timeToMin(t); return m >= 17*60 && m < 18*60; });
-        const hasAfter18 = zhiliuTimes.some(t => { const m = timeToMin(t); if (t.h < 5) m += 24*60; return m >= 18*60; });
+        const hasAfter18 = zhiliuTimes.some(t => { let m = timeToMin(t); if (t.h < 5) m += 24*60; return m >= 18*60; });
         const isZhiliu = dept === '翻译组（D栋）' && noCard1700_1759 && hasAfter18;
         if (!isZhiliu) {
           const sortedOt = [...cls.overtime_end].sort((a,b)=>timeToMin(a)-timeToMin(b));
