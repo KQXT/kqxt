@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.38-26.08.30.18:30</div>
+    <div class="version">v2.39-26.08.30.18:40</div>
   </div>
 </div>
 
@@ -1930,6 +1930,14 @@ const DEFAULT_CONFIG = {
         "net_h": 4,
         "day_val": 0.5,
         "ot_base": "17:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00",
+        "break_min": 30
       }
     ],
     "雕蜡组": [
@@ -2868,6 +2876,17 @@ function inferShiftFromDept(times, dept, useUniversal) {
   // ② 并列者全都迟到：在「能上满8小时」前提下，迟到最少优先
   const fullOnly = sameDist.filter(s => isFull8(s));
   const cand = fullOnly.length ? fullOnly : sameDist;
+  // 口扫修边组（D栋）专属：该部门「13:30-17:30 半天」与「13:30-22:00 全天」同起点并列，
+  // 按实际下班行为区分：有 18:00 及之后打卡 → 全天班(day_val>=1)；否则 → 半天班(day_val<1)。
+  // 否则只打到 17:30 的半天工友会被误判成全天且早退。
+  if (dept === '口扫修边组（D栋）') {
+    const workedEve = times.some(t => { let m = timeToMin(t); if (t.h < 5) m += 1440; return m >= 18 * 60; });
+    const tie132 = sameDist.filter(s => { const sm = parseShiftTime(s.start); return sm !== null && Math.abs(sm - (13*60+30)) <= 5; });
+    if (tie132.length >= 2) {
+      const chosen = tie132.filter(s => workedEve ? (s.day_val || 0) >= 1 : (s.day_val || 0) < 1);
+      if (chosen.length) return chosen[0];
+    }
+  }
   const ranked = cand.map(s => ({ shift: s, late: lateMinOf(s), score: cardTypeScore(s), ef: endFit(s) }));
   ranked.sort((a, b) => (a.late - b.late) || (b.score - a.score) || (a.ef - b.ef));
   return ranked[0].shift;
