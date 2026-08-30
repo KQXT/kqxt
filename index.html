@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.27-26.08.28.14:16</div>
+    <div class="version">v2.30-26.08.30.08:40</div>
   </div>
 </div>
 
@@ -3083,15 +3083,39 @@ function adjustClassified(cls, dept, times) {
     if (obRaw !== null) {
       const obMin = obRaw <= 30 ? obRaw + 24 * 60 : obRaw;   // 跨天 ot_base(00:30) → 次日 24:30
       const lo = obMin - 30;
-      const hi = obMin <= 18 * 60 ? obMin + 60 : obMin + 30; // 早班宽松(+60)，晚班/跨天收紧(+30)
+      // 2026-08-30 修正：正常下班宽限窗口随班次不同。
+      //   晚班（ot_base >= 17:00，如 17:00/17:30 班）保留 +60 宽限（迟到下班不误判加班）；
+      //   早班（ot_base < 17:00，如 16:30/12:00 班）仅 +15 宽限，避免把 17:30 这类加班卡吞成正常下班。
+      const hi = obMin >= 17 * 60 ? obMin + 60 : obMin + 15;
       if (cls.overtime_end.length) {
-        const sortedOt = [...cls.overtime_end].sort((a,b)=>timeToMin(a)-timeToMin(b));
-        const lastOt = sortedOt[sortedOt.length-1];
-        let lm = timeToMin(lastOt);
-        if (lastOt.h < 5) lm += 24*60; // 跨天凌晨卡归次日
-        if (lm >= lo && lm <= hi) {
-          cls.afternoon_end = [lastOt];
-          cls.overtime_end = sortedOt.slice(0, -1);
+        // 翻译组（D栋）直落制度（2026-08-30）：17:00-17:59 完全无卡、18:00 及之后有卡 → 直落加班，
+        // 该卡必须保留为加班卡，不得被早班宽限窗(ot_base+60)吞成「下午下班卡」。
+        const zhiliuTimes = (times || []).filter(t => t && typeof t === 'object');
+        const noCard1700_1759 = !zhiliuTimes.some(t => { const m = timeToMin(t); return m >= 17*60 && m < 18*60; });
+        const hasAfter18 = zhiliuTimes.some(t => { const m = timeToMin(t); if (t.h < 5) m += 24*60; return m >= 18*60; });
+        const isZhiliu = dept === '翻译组（D栋）' && noCard1700_1759 && hasAfter18;
+        if (!isZhiliu) {
+          const sortedOt = [...cls.overtime_end].sort((a,b)=>timeToMin(a)-timeToMin(b));
+          const lastOt = sortedOt[sortedOt.length-1];
+          let lm = timeToMin(lastOt);
+          if (lastOt.h < 5) lm += 24*60; // 跨天凌晨卡归次日
+          if (lm >= lo && lm <= hi) {
+            cls.afternoon_end = [lastOt];
+            cls.overtime_end = sortedOt.slice(0, -1);
+          }
+        }
+      }
+      // 2026-08-30 新增：正常下班卡若明显晚于 ot_base（早班宽限外），实为「加班下班卡」，移入 overtime_end
+      if (cls.afternoon_end.length) {
+        const moved = [];
+        cls.afternoon_end = cls.afternoon_end.filter(t => {
+          let tm = timeToMin(t);
+          if (t.h < 5) tm += 24*60;
+          if (tm > hi) { moved.push(t); return false; }
+          return true;
+        });
+        if (moved.length) {
+          cls.overtime_end = cls.overtime_end.concat(moved).sort((a,b)=>timeToMin(a)-timeToMin(b));
         }
       }
     }
@@ -3117,22 +3141,22 @@ function inferMissingMorningStart(dayIdx, processedDays, dept) {
 }
 
 // 计算加班的起算时间（分钟）
-// 规则：
-//  - 加班从 ot_base（班次正常下班时间）之后算起
-//  - 若 ot_base 在 18:00 之前（含标准白班 17:30），统一从 18:00 起（17:30-18:00 为全员晚餐休息，不算加班）
+// 规则（2026-08-30 修正）：
+//  - 加班一律从「班次正常下班时间 ot_base」之后算起，不再强行统一 18:00。
+//    （之前 Math.max(ob,18:00) 对 07:00-16:30 这类早于 8 点的班是错的：16:30→18:00 整段被吞掉）
 //  - 跨天班次（ot_base 在 00:00 附近，即 <=30 分，如 00:30）按次日处理
 function getOvertimeStartMin(shift) {
   if (!shift || !shift.ot_base) return 18 * 60;
   const ob = parseShiftTime(shift.ot_base);
   if (ob === null) return 18 * 60;
   if (ob <= 30) return ob + 24 * 60;          // 跨天：00:30 → 次日 24:30
-  return Math.max(ob, 18 * 60);               // 白班统一 18:00；晚班（19:00/20:00/22:00/23:30 等）用 ot_base
+  return ob;                                  // 直接以班次正常下班时间为加班起点
 }
 
 // 计算加班工时（小时）
 // 取「真实时间最晚」的加班卡（凌晨卡 h<5 视为次日 +24h），从 ot_base 起算
-// 白班（ot_base <=18:00，含标准 17:30）统一 18:00 起（17:30-18:00 为全员晚餐休息）
-function computeOvertimeHours(cls, matchedShift) {
+// 17:30-18:00 为全员晚餐休息，不计入加班（仅扣去加班区间与之重叠的部分）
+function computeOvertimeHours(cls, matchedShift, dept, times) {
   if (!cls.overtime_end.length) return 0;
   let bestMin = -1;
   for (const t of cls.overtime_end) {
@@ -3141,7 +3165,21 @@ function computeOvertimeHours(cls, matchedShift) {
     if (tm > bestMin) bestMin = tm;
   }
   const otStartMin = getOvertimeStartMin(matchedShift);
-  const nightMin = bestMin - otStartMin;
+  let nightMin = bestMin - otStartMin;
+  if (nightMin <= 0) return 0;
+  // 扣除晚餐窗 17:30-18:00（仅当加班区间与之重叠）
+  const dinnerStart = 17 * 60 + 30, dinnerEnd = 18 * 60;
+  let overlap = Math.max(0, Math.min(bestMin, dinnerEnd) - Math.max(otStartMin, dinnerStart));
+  // 翻译组（D栋）直落制度（2026-08-30 新增）：
+  //   当天 17:00-17:59 之间没有任何打卡、但 18:00 及之后有下班卡 → 视为「直落」，
+  //   即 17:30-18:00 这段时间没休息、连续上班，该半小时也要计入加班，不扣除。
+  //   其余情况（正常下班 / 正常加班打2次卡）与其它部门一致，仍扣晚餐。
+  if (dept === '翻译组（D栋）' && times && times.length) {
+    const noCard1700_1759 = !times.some(t => { const m = timeToMin(t); return m >= 17*60 && m < 18*60; });
+    const hasAfter18 = cls.overtime_end.some(t => { let m = timeToMin(t); if (t.h < 5) m += 24*60; return m >= 18*60; });
+    if (noCard1700_1759 && hasAfter18) overlap = 0;
+  }
+  nightMin -= overlap;
   return nightMin > 0 ? nightMin / 60 : 0;
 }
 
@@ -3193,7 +3231,7 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
     }
     // 加班：从 ot_base（班次正常下班）之后算起（与主线一致）
     const cls2 = classifyPunchTimes(times);
-    const nightH = computeOvertimeHours(cls2, matchedShift);
+    const nightH = computeOvertimeHours(cls2, matchedShift, dept, times);
     return {morning:0, afternoon:totalH, night:nightH, total:totalH + nightH};
   }
 
@@ -3294,7 +3332,7 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
 
   // 晚上加班工时：从 ot_base（班次正常下班）之后算起
   if (cls.overtime_end.length) {
-    nightHours = computeOvertimeHours(cls, matchedShift);
+    nightHours = computeOvertimeHours(cls, matchedShift, dept, times);
   }
 
   const total = mornHours + afHours + nightHours;
@@ -3388,7 +3426,12 @@ function calcMissingCards(times, dept) {
       // 导致"有下班卡却缺上班卡"(如 08:20/12:27/17:32 缺 13:30 上班卡)被漏判。
       // 有 afternoon_end/overtime_start/overtime_end 恰恰证明下午来了，更该判缺 afternoon_start。
       if (!hasAfStart && !hasNoonArr) { count++; types.push('afternoon_start'); }
-      if (!hasAfEnd && !cls.overtime_start.length) { count++; types.push('afternoon_end'); }
+      // 翻译组（D栋）直落制度（2026-08-30）：17:00-17:59 完全无卡、18:00 及之后有卡 → 直落加班，
+      // 不标"下午下班卡缺失"（因中间没休息、直接连续到加班卡，本就无单独下班卡）。
+      const isZhiliu = dept === '翻译组（D栋）'
+        && !normal.some(t => { const m = timeToMin(t); return m >= 17*60 && m < 18*60; })
+        && normal.some(t => { const m = timeToMin(t); return m >= 18*60; });
+      if (!hasAfEnd && !cls.overtime_start.length && !isZhiliu) { count++; types.push('afternoon_end'); }
     }
     // 2026-08-14 修正（其二）：不再把 overtime_start（17:50-18:00 的"加班上班卡"）当作必打卡点。
     // 原因：绝大多数加班员工的真实行为是「打下班卡(17:30前后) → 直接打加班下班卡(22:xx)」，
