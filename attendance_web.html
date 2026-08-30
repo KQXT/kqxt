@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.36-26.08.30.17:25</div>
+    <div class="version">v2.37-26.08.30.17:35</div>
   </div>
 </div>
 
@@ -3957,8 +3957,6 @@ function processEmployee(emp) {
                 early=true;
                 earlyPunch=`${String(lastDep.h).padStart(2,'0')}:${String(lastDep.m).padStart(2,'0')}`;
                 earlyMin = shiftEndMin - lastDepMin;
-                // 早退≤5分钟不计入（与迟到允许的宽限对称；可消除跨午夜班次 23:5x→00:00 等边界误标）
-                if (earlyMin <= 5) { early=false; earlyMin=0; earlyPunch=null; }
               }
             }
           }
