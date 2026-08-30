@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.34-26.08.30.16:28</div>
+    <div class="version">v2.35-26.08.30.17:05</div>
   </div>
 </div>
 
@@ -3946,11 +3946,13 @@ function processEmployee(emp) {
             depCards = [];
           }
           if (depCards.length) {
-            const lastDep = depCards.reduce((a,b)=>timeToMin(a)>=timeToMin(b)?a:b);
-            const lastDepMin = timeToMin(lastDep);
+            // 跨午夜下班卡按次日算：00:00 不是 0 点，而是 24:00
+            const norm = (t) => timeToMin(t) + (t.h < 5 ? 24*60 : 0);
+            const lastDep = depCards.reduce((a,b)=>norm(a)>=norm(b)?a:b);
+            const lastDepMin = norm(lastDep);
             if (lastDepMin < shiftEndMin) {
               // 当天是否有晚于班次下班的卡（加班/晚走）→ 若有则不判早退
-              const hasLater = times.some(t => { let tm=timeToMin(t); if (t.h<5) tm+=24*60; return tm > shiftEndMin; });
+              const hasLater = times.some(t => norm(t) > shiftEndMin);
               if (!hasLater) {
                 early=true;
                 earlyPunch=`${String(lastDep.h).padStart(2,'0')}:${String(lastDep.m).padStart(2,'0')}`;
