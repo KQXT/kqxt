@@ -85,14 +85,6 @@
         "break_min": 30
       },
       {
-        "start": "15:00",
-        "end": "00:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "00:30",
-        "break_min": 30
-      },
-      {
         "start": "08:00",
         "end": "17:30",
         "net_h": 8,
@@ -205,14 +197,6 @@
         "break_min": 30
       },
       {
-        "start": "15:00",
-        "end": "00:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "00:30",
-        "break_min": 30
-      },
-      {
         "start": "08:00",
         "end": "17:30",
         "net_h": 8,
@@ -256,14 +240,6 @@
         "net_h": 8,
         "day_val": 1,
         "ot_base": "23:30",
-        "break_min": 30
-      },
-      {
-        "start": "15:00",
-        "end": "00:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "00:30",
         "break_min": 30
       },
       {
@@ -325,14 +301,6 @@
         "net_h": 8,
         "day_val": 1,
         "ot_base": "23:30",
-        "break_min": 30
-      },
-      {
-        "start": "15:00",
-        "end": "00:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "00:30",
         "break_min": 30
       },
       {
@@ -2245,14 +2213,6 @@
         "net_h": 8,
         "day_val": 1,
         "ot_base": "23:30",
-        "break_min": 30
-      },
-      {
-        "start": "15:00",
-        "end": "00:30",
-        "net_h": 8,
-        "day_val": 1,
-        "ot_base": "00:30",
         "break_min": 30
       },
       {
