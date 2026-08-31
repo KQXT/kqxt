@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.45-26.08.31.17:34</div>
+    <div class="version">v2.46-26.08.31.17:47</div>
   </div>
 </div>
 
@@ -3389,16 +3389,21 @@ function calculateAllHours(times, dept, dayIdx, processedDays) {
 //  - 加班直接按「ot_base → 最晚卡」计算，不与迟到做净额抵消
 function calcShiftAndOvertime(times, dept, dayIdx, processedDays) {
   const noOt = dept.includes('保安') || dept.includes('卫生');
-  // 2026-08-31 新规则（用户拍板）：出勤天数以"匹配班次 day_val"为基线，
-  // 但必须至少有「上班卡+下班卡」2 张有效卡才算当天出勤，杜绝单张孤卡算整天导致有薪天数虚高。
-  //  - 仅 1 张卡（含当天只剩凌晨卡的情形，凌晨卡已在 preprocess 归到前一天）→ 出勤 0。
-  //  - 当天 2 张卡（半个班：上午上班+中午下班 / 下午上班+下午下班）→ 0.5。
-  //  - 当天 3~4 张卡（完整一天或缺任意 1 张）→ 1。
-  // 说明：单班制员工（如 13:30-22:00、08:00-17:30、16:00-00:30）2 张卡即其整天，按匹配班次 day_val 给 1，符合直觉。
-  if (noOt) {
-    return {attendanceDays: times.length >= 2 ? 1 : 0, paidDays: times.length >= 2 ? 1 : 0, overtimeHours: 0, halfDay: false};
+  // 2026-08-31 出勤规则（用户拍板，v2.46 修订单卡）：
+  //  - 0 张卡 → 0 天（休息）
+  //  - 1 张卡且是凌晨卡(h<5) → 0 天（该卡已在 preprocess 归到昨晚下班，当天休息）
+  //  - 1 张卡且是正常时段卡(h>=5) → 0.5 天（半天，系统标记半天）
+  //  - ≥2 张卡 → 按匹配班次 day_val（全天=1 / 半天=0.5），含防膨胀护栏
+  // 说明：单班制员工（13:30-22:00 / 08:00-17:30 / 16:00-00:30）2 张卡即其整天，给 1，符合直觉。
+  if (times.length === 0) return {attendanceDays:0, paidDays:0, overtimeHours:0, halfDay:false};
+  if (times.length === 1) {
+    const only = times[0];
+    if (only.h < 5) return {attendanceDays:0, paidDays:0, overtimeHours:0, halfDay:false}; // 单张凌晨卡→0
+    return {attendanceDays:0.5, paidDays:0.5, overtimeHours:0, halfDay:true};               // 单张正常卡→半天
   }
-  if (times.length < 2) return {attendanceDays:0, paidDays:0, overtimeHours:0, halfDay:false};
+  if (noOt) {
+    return {attendanceDays: 1, paidDays: 1, overtimeHours: 0, halfDay: false};
+  }
 
   // 出勤天数：取匹配班次的 day_val（全天=1 / 半天=0.5）；无法匹配时用打卡分布兜底
   const matchedShift = getBestShift(times, dept);
