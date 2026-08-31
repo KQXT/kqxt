@@ -159,11 +159,11 @@
         "break_min": 30
       },
       {
-        "start": "15:00",
-        "end": "00:30",
+        "start": "15:30",
+        "end": "00:00",
         "net_h": 8,
         "day_val": 1,
-        "ot_base": "00:30",
+        "ot_base": "00:00",
         "break_min": 30
       }
     ],
