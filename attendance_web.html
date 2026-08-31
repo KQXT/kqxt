@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.43-26.08.31.14:51</div>
+    <div class="version">v2.44-26.08.31.15:26</div>
   </div>
 </div>
 
@@ -2881,7 +2881,27 @@ function getDeptEarliestStart(dept) {
 // 统一的最佳班次推断函数
 // 返回完整的班次对象 {start, end, net_h, break_min, ...} 或 null
 // 优先用部门配置，匹配不合理时自动用通用模板兜底
+// 当前处理员工的姓名上下文（由 processEmployee 在处理每位员工时写入，用于按人定制班次匹配）
+let CURRENT_EMP_NAME = null;
+
 function getBestShift(times, dept) {
+  // ── 李烨兴专属规则（用户 2026-08-31）──
+  // 他是 07:00-16:30 班，但首卡常打在 6 点多；原按「首卡距离最近」会被误匹配到 06:30-16:00 而每天迟到。
+  // 仅修复这个真正的 bug：首卡在 6 点多 → 强制归入 07:00-16:30（不再误判迟到）。
+  // 首卡在 7 点多则按普通逻辑匹配（与别人一致：7:0x→07:00-16:30，7:3x→08:00-17:30），不强行改判 8 点，
+  // 否则 7:0x 到达、16:30 下班会被误标「早退」。其他管理层员工对 06:30-16:00 的正常匹配不受影响。
+  if (CURRENT_EMP_NAME === '李烨兴' && dept && dept.includes('管理层')) {
+    const nrm = times.filter(t => t.h >= 6);
+    if (nrm.length) {
+      const fp = nrm.reduce((a, b) => timeToMin(a) <= timeToMin(b) ? a : b);
+      const fMin = timeToMin(fp);
+      if (fMin >= 6 * 60 && fMin < 7 * 60) {
+        const pool = getDeptShifts(dept) || [];
+        const sh = pool.find(x => x.start === '07:00' && x.end === '16:30');
+        if (sh) return sh;
+      }
+    }
+  }
   const normal = times.filter(t => t.h >= 6);
   if (!normal.length) return null;
   const firstPunchMin = timeToMin(normal[0]);
@@ -3857,6 +3877,7 @@ async function startProcess() {
 function processEmployee(emp) {
   try {
   const dept = emp.dept;
+  CURRENT_EMP_NAME = emp.name;   // 写入员工姓名上下文，供 getBestShift 按人定制（如李烨兴）
   const isNoOt = dept.includes('保安') || dept.includes('卫生');
   const processedDays = preprocessCrossMidnight([...emp.days], dept);
 
@@ -4079,6 +4100,8 @@ function processEmployee(emp) {
       overtimeDaily:[], isWeekendDaily:[], lateDaily:[], latePunchDaily:[], missingDaily:[], halfDayDaily:[], earlyDaily:[], earlyPunchDaily:[],
       processedDays: emp && emp.days || [], rawDays: emp && emp.days || [], _error: true
     };
+  } finally {
+    CURRENT_EMP_NAME = null;   // 清理员工姓名上下文，避免泄漏到后续员工
   }
 }
 
