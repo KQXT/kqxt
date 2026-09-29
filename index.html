@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.47-26.08.31.18:21</div>
+    <div class="version">v2.48-26.09.29.18:53</div>
   </div>
 </div>
 
@@ -140,6 +140,52 @@ let DEPT_SHIFTS = {};
 const DEFAULT_CONFIG = {
   "ALIAS_MAP": {},
   "DEPT_SHIFTS": {
+    "种植车瓷4组（C栋）": [
+      {"start": "08:00", "end": "17:30", "net_h": 8, "day_val": 1, "ot_base": "17:30"},
+      {"start": "08:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00"},
+      {"start": "13:30", "end": "17:30", "net_h": 4, "day_val": 0.5, "ot_base": "17:30"}
+    ],
+    "种植车瓷5组（C栋）": [
+      {"start": "08:00", "end": "17:30", "net_h": 8, "day_val": 1, "ot_base": "17:30"},
+      {"start": "08:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00"},
+      {"start": "13:30", "end": "17:30", "net_h": 4, "day_val": 0.5, "ot_base": "17:30"}
+    ],
+    "种植车瓷6组（C栋）": [
+      {"start": "08:00", "end": "17:30", "net_h": 8, "day_val": 1, "ot_base": "17:30"},
+      {"start": "08:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00"},
+      {"start": "13:30", "end": "17:30", "net_h": 4, "day_val": 0.5, "ot_base": "17:30"}
+    ],
+    "非种植车瓷1组（C栋）": [
+      {"start": "08:00", "end": "17:30", "net_h": 8, "day_val": 1, "ot_base": "17:30"},
+      {"start": "08:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00"},
+      {"start": "13:30", "end": "17:30", "net_h": 4, "day_val": 0.5, "ot_base": "17:30"}
+    ],
+    "非种植车瓷2组（C栋）": [
+      {"start": "08:00", "end": "17:30", "net_h": 8, "day_val": 1, "ot_base": "17:30"},
+      {"start": "08:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00"},
+      {"start": "13:30", "end": "17:30", "net_h": 4, "day_val": 0.5, "ot_base": "17:30"}
+    ],
+    "非种植车瓷3组（C栋）": [
+      {"start": "08:00", "end": "17:30", "net_h": 8, "day_val": 1, "ot_base": "17:30"},
+      {"start": "08:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00"},
+      {"start": "13:30", "end": "17:30", "net_h": 4, "day_val": 0.5, "ot_base": "17:30"}
+    ],
+    "设计一组（D栋）": [
+      {"start": "08:00", "end": "17:30", "net_h": 8, "day_val": 1, "ot_base": "17:30"},
+      {"start": "09:00", "end": "19:00", "net_h": 8, "day_val": 1, "ot_base": "19:00"},
+      {"start": "08:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00"},
+      {"start": "13:30", "end": "17:30", "net_h": 4, "day_val": 0.5, "ot_base": "17:30"},
+      {"start": "09:00", "end": "14:30", "net_h": 4, "day_val": 0.5, "ot_base": "14:30"},
+      {"start": "13:30", "end": "22:00", "net_h": 8, "day_val": 1, "ot_base": "22:00"}
+    ],
+    "设计二组（D栋）": [
+      {"start": "08:00", "end": "17:30", "net_h": 8, "day_val": 1, "ot_base": "17:30"},
+      {"start": "09:00", "end": "19:00", "net_h": 8, "day_val": 1, "ot_base": "19:00"},
+      {"start": "08:00", "end": "12:00", "net_h": 4, "day_val": 0.5, "ot_base": "12:00"},
+      {"start": "13:30", "end": "17:30", "net_h": 4, "day_val": 0.5, "ot_base": "17:30"},
+      {"start": "09:00", "end": "14:30", "net_h": 4, "day_val": 0.5, "ot_base": "14:30"},
+      {"start": "13:30", "end": "22:00", "net_h": 8, "day_val": 1, "ot_base": "22:00"}
+    ],
     "上OP组（B栋）": [
       {"start":"08:00","end":"17:30","net_h":8,"day_val":1,"ot_base":"17:30"},
       {"start":"10:00","end":"20:00","net_h":8,"day_val":1,"ot_base":"20:00"},
