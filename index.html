@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.48-26.09.29.18:53</div>
+    <div class="version">v2.49-26.10.02.16:32</div>
   </div>
 </div>
 
@@ -4474,17 +4474,28 @@ async function exportExcel() {
     const weekdaySumRef = weekdayCols.length ? weekdayCols.map(c => c + rowB_Num).join(',') : '';
     const weekendSumRef = weekendCols.length ? weekendCols.map(c => c + rowB_Num).join(',') : '';
 
+    // 列引用（用于有薪天数 / 加班总时长 公式，与上游统计列同行 RowA）
+    const cAttend    = colLetter(sumColStart + 0) + rowA_Num; // 平时出勤天数
+    const cWeekendDay= colLetter(sumColStart + 2) + rowA_Num; // 周末天数
+    const cHoliday   = colLetter(sumColStart + 4) + rowA_Num; // 法定假日天数
+    const cSwap      = colLetter(sumColStart + 5) + rowA_Num; // 调休天数
+    const cWkOt      = colLetter(sumColStart + 1) + rowA_Num; // 平时加班工时
+    const cWeOt      = colLetter(sumColStart + 3) + rowA_Num; // 周末加班工时
+
     // 后19列统计（RowA）：平时/周末加班工时直接引用每日加班列求和
+    // 有薪天数 / 加班总时长 改为带公式，与上游单元格联动（Excel 中可追溯、可改上游重算）
     const statRowA_Values = [
       st.平时出勤天数,
       weekdaySumRef ? { formula: `=SUM(${weekdaySumRef})` } : (st.平时加班工时 || 0),
       st.周末天数,
       weekendSumRef ? { formula: `=SUM(${weekendSumRef})` } : (st.周末加班工时 || 0),
-      st.法定假日天数, st.调休天数, st.有薪天数,
+      st.法定假日天数, st.调休天数,
+      { formula: `=${cAttend}+${cWeekendDay}+${cHoliday}+${cSwap}` }, // 有薪天数
       st.缺卡次数 || '',
       st['0点'] || '', st['1点'] || '', st['2点'] || '', st['3点'] || '',
       st['迟到/早退1-10分'] || '', st['迟到/早退11-30分'] || '', st['迟到/早退31-59分'] || '', st['迟到/早退1小时以上'] || '',
-      st.加班总时长 || '', st.备注 || '', ''
+      { formula: `=${cWkOt}+${cWeOt}` }, // 加班总时长 = 平时加班工时 + 周末加班工时
+      st.备注 || '', ''
     ];
     for (let i = 0; i < statRowA_Values.length; i++) {
       rowA.getCell(sumColStart + i).value = statRowA_Values[i];
