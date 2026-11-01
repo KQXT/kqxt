@@ -1553,7 +1553,7 @@
         "ot_base": "17:30"
       }
     ],
-    "种植CAD(C栋）": [
+    "种植CAD（C栋）": [
       {
         "start": "08:00",
         "end": "17:30",
@@ -2919,6 +2919,644 @@
         "net_h": 8,
         "day_val": 1,
         "ot_base": "22:00"
+      }
+    ],
+    "发货组（D栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "09:00",
+        "end": "14:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "14:30"
+      }
+    ],
+    "排牙设计（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "09:00",
+        "end": "14:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "14:30"
+      }
+    ],
+    "下货组（D栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "09:00",
+        "end": "14:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "14:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "15:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "15:30"
+      }
+    ],
+    "正畸A组（咬合板）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "09:00",
+        "end": "14:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "14:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "15:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "15:30"
+      }
+    ],
+    "正畸B组（其他）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "09:00",
+        "end": "14:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "14:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "15:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "15:30"
+      }
+    ],
+    "CAM-模型打印组（B栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "07:00",
+        "end": "11:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "11:00"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "09:00",
+        "end": "14:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "14:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00",
+        "break_min": 30
+      },
+      {
+        "start": "16:00",
+        "end": "00:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:30",
+        "break_min": 30
+      }
+    ],
+    "CAM-模型打印（D栋）": [
+      {
+        "start": "06:30",
+        "end": "16:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:00"
+      },
+      {
+        "start": "06:30",
+        "end": "10:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "10:30"
+      },
+      {
+        "start": "15:30",
+        "end": "00:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:00",
+        "break_min": 30
+      }
+    ],
+    "CAM-氧化锆切削（D栋）": [
+      {
+        "start": "06:30",
+        "end": "16:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:00"
+      },
+      {
+        "start": "06:30",
+        "end": "10:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "10:30"
+      },
+      {
+        "start": "15:30",
+        "end": "00:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "00:00",
+        "break_min": 30
+      }
+    ],
+    "充胶组（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "烤瓷车金组（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "15:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "15:30"
+      }
+    ],
+    "烤瓷终检过程检（B栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "09:00",
+        "end": "14:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "14:30"
+      }
+    ],
+    "蜡型（C栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "09:00",
+        "end": "14:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "14:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "15:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "15:30"
+      }
+    ],
+    "上瓷（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "上釉（D栋）": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "10:00",
+        "end": "20:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "20:00",
+        "break_min": 30
+      },
+      {
+        "start": "10:00",
+        "end": "15:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "15:30"
+      }
+    ],
+    "客服A组（邮件）-D栋": [
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "09:00",
+        "end": "19:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "19:00",
+        "break_min": 30
+      },
+      {
+        "start": "09:00",
+        "end": "14:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "14:30"
+      },
+      {
+        "start": "13:30",
+        "end": "22:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "22:00",
+        "break_min": 30
       }
     ]
   }
