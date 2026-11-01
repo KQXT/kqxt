@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.50-26.11.01.09:02</div>
+    <div class="version">v2.51-26.11.01.09:45</div>
   </div>
 </div>
 
@@ -1093,6 +1093,43 @@ const DEFAULT_CONFIG = {
       }
     ],
     "翻译组（D栋）": [
+      {
+        "start": "07:00",
+        "end": "16:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "16:30"
+      },
+      {
+        "start": "07:30",
+        "end": "17:00",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:00"
+      },
+      {
+        "start": "08:00",
+        "end": "17:30",
+        "net_h": 8,
+        "day_val": 1,
+        "ot_base": "17:30"
+      },
+      {
+        "start": "08:00",
+        "end": "12:00",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "12:00"
+      },
+      {
+        "start": "13:30",
+        "end": "17:30",
+        "net_h": 4,
+        "day_val": 0.5,
+        "ot_base": "17:30"
+      }
+    ],
+    "翻译": [
       {
         "start": "07:00",
         "end": "16:30",
@@ -3297,7 +3334,7 @@ function adjustClassified(cls, dept, times) {
         const zhiliuTimes = (times || []).filter(t => t && typeof t === 'object');
         const noCard1700_1759 = !zhiliuTimes.some(t => { const m = timeToMin(t); return m >= 17*60 && m < 18*60; });
         const hasAfter18 = zhiliuTimes.some(t => { let m = timeToMin(t); if (t.h < 5) m += 24*60; return m >= 18*60; });
-        const isZhiliu = dept === '翻译组（D栋）' && noCard1700_1759 && hasAfter18;
+        const isZhiliu = (dept === '翻译组（D栋）' || dept === '翻译') && noCard1700_1759 && hasAfter18;
         if (!isZhiliu) {
           const sortedOt = [...cls.overtime_end].sort((a,b)=>timeToMin(a)-timeToMin(b));
           const lastOt = sortedOt[sortedOt.length-1];
@@ -3378,7 +3415,7 @@ function computeOvertimeHours(cls, matchedShift, dept, times) {
   //   当天 17:00-17:59 之间没有任何打卡、但 18:00 及之后有下班卡 → 视为「直落」，
   //   即 17:30-18:00 这段时间没休息、连续上班，该半小时也要计入加班，不扣除。
   //   其余情况（正常下班 / 正常加班打2次卡）与其它部门一致，仍扣晚餐。
-  if (dept === '翻译组（D栋）' && times && times.length) {
+  if ((dept === '翻译组（D栋）' || dept === '翻译') && times && times.length) {
     const noCard1700_1759 = !times.some(t => { const m = timeToMin(t); return m >= 17*60 && m < 18*60; });
     const hasAfter18 = cls.overtime_end.some(t => { let m = timeToMin(t); if (t.h < 5) m += 24*60; return m >= 18*60; });
     if (noCard1700_1759 && hasAfter18) overlap = 0;
@@ -3650,7 +3687,7 @@ function calcMissingCards(times, dept) {
       if (!hasAfStart && !hasNoonArr) { count++; types.push('afternoon_start'); }
       // 翻译组（D栋）直落制度（2026-08-30）：17:00-17:59 完全无卡、18:00 及之后有卡 → 直落加班，
       // 不标"下午下班卡缺失"（因中间没休息、直接连续到加班卡，本就无单独下班卡）。
-      const isZhiliu = dept === '翻译组（D栋）'
+      const isZhiliu = (dept === '翻译组（D栋）' || dept === '翻译')
         && !normal.some(t => { const m = timeToMin(t); return m >= 17*60 && m < 18*60; })
         && normal.some(t => { const m = timeToMin(t); return m >= 18*60; });
       // 顺延加班（ot_base→17:30，17:00-18:00 之间打的卡）：按规则，该卡即为「加班结束+下班」，
