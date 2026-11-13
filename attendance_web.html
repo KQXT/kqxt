@@ -60,7 +60,7 @@ td.punch-cell { white-space: pre-wrap; text-align: left; font-size: 11px; line-h
 <div class="header">
   <div>
     <h1>📊 考勤记录处理工具</h1>
-    <div class="version">v2.52-26.11.01.09:59</div>
+    <div class="version">v2.53-26.11.13.12:55</div>
   </div>
 </div>
 
@@ -3735,7 +3735,7 @@ function preprocessCrossMidnight(empDays, dept) {
   // ── 规则（写死，用户明确指令）──
   // ① 凌晨卡(h<5) = 前一天(昨天)的下班卡，算成昨天的下班时间。
   // ② 第 d 天(0-based)的「昨天下班卡」= 第 d+1 天里的凌晨卡，归并到当天参与昨天的加班/工时计算(按 +24h 处理)。
-  // ③ 显示单元格使用 rawDays(原始数据)，凌晨卡始终留在它被打的那一天(第 d+1 天)的单元格，绝不挪动。
+  // ③ 显示单元格使用 processedDays（与计算一致）：凌晨卡归到前一天的单元格显示（第 d 天卡片含第 d+1 天的凌晨卡），不再留在真实打卡日。
   // ④ 第 0 天自身的凌晨卡属上月(无前一日)，直接丢弃；当天自身凌晨卡不计入当天、留待其前一日结算。
   for (let d = 0; d < processed.length; d++) {
     const todayAll = parse(processed[d]);
@@ -4115,7 +4115,7 @@ function processEmployee(emp) {
     加班总时长:0, 备注:'',
     overtimeDaily:[], isWeekendDaily:[], lateDaily:[], latePunchDaily:[], missingDaily:[], halfDayDaily:[], earlyDaily:[], earlyPunchDaily:[],
     processedDays,     // 计算用（含跨天凌晨卡归入前一天，可能含下月1号列）
-    rawDays: emp.days,  // 显示用（原始数据，可能含下月1号列）
+    rawDays: emp.days,  // 原始数据（保留供 0-3点统计与错误回退；显示单元格现用 processedDays）
   };
 
   // 只遍历 dateHeaders.length 天（不含下月1号）
@@ -4373,7 +4373,7 @@ function renderPreview() {
     html += `<tr><td rowspan="2">${st.name}</td><td rowspan="2">${st.id}</td><td rowspan="2">${st.dept}</td>`;
     for (let i = 0; i < showDays; i++) {
       const isWe = satSunCols.includes(i);
-      const rawDay = st.rawDays[i] || '';
+      const rawDay = st.processedDays[i] || '';
       const missing = st.missingDaily[i] || [];
       const latePunch = st.latePunchDaily[i];
       const earlyPunch = st.earlyPunchDaily[i];
@@ -4601,9 +4601,9 @@ async function exportExcel() {
     rowA.getCell(2).value = st.id;
     rowA.getCell(3).value = st.dept;
 
-    // 每日打卡列（用原始数据 rawDays，只导出 dateHeaders.length 天，不含下月1号）
+    // 每日打卡列（用 processedDays：凌晨卡已归到前一天显示，与计算一致；只导出 dateHeaders.length 天，不含下月1号）
     for (let i = 0; i < dateHeaders.length; i++) {
-      const segments = buildCellText(st.rawDays[i] || '', st.missingDaily[i], st.latePunchDaily[i], st.halfDayDaily[i], st.earlyPunchDaily[i]);
+      const segments = buildCellText(st.processedDays[i] || '', st.missingDaily[i], st.latePunchDaily[i], st.halfDayDaily[i], st.earlyPunchDaily[i]);
       const cell = rowA.getCell(4 + i);
       // 用 rich text，全部宋体12号
       const richParts = segments.map(seg => ({
